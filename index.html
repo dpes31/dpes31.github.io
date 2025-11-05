@@ -89,10 +89,14 @@
 </div>
 
 <script>
+// =========================================================
+// 🛠️ 금융 함수: 모든 오류 수정 완료
+// =========================================================
+
 // JavaScript Finance Formula: PV (Present Value)
 // 대출 원금 (DSR 기준 최대 대출액) 계산
 function calculatePV(rate, nper, pmt) {
-    // **수정된 부분: 금리가 0일 경우 예외 처리**
+    // 1. 금리가 0일 경우 예외 처리 (Infinity 오류 해결)
     if (rate === 0 || rate < 0.0001) return pmt * nper; 
     
     const monthlyRate = rate / 12;
@@ -103,13 +107,18 @@ function calculatePV(rate, nper, pmt) {
 // JavaScript Finance Formula: PMT (Payment)
 // 필요한 대출 상환액 계산
 function calculatePMT(rate, nper, pv) {
-    // **수정된 부분: 금리가 0일 경우 예외 처리**
+    // 1. 금리가 0일 경우 예외 처리 (Infinity 오류 해결)
     if (rate === 0 || rate < 0.0001) return pv / nper;
     
     const monthlyRate = rate / 12;
     // PMT 공식: PMT = (PV * r) / [1 - (1 + r)^-n]
-    return (pv * monthlyRate) / (1 - Math.pow(Math.pow(1 + monthlyRate, -nper)));
+    // 2. 괄호 오류 수정 완료
+    return (pv * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -nper));
 }
+
+// =========================================================
+// ⚙️ 계산 및 UI 로직
+// =========================================================
 
 // 소수점 2자리 반올림 포맷팅 (억 원)
 const format = (num) => (num / 10000).toFixed(2) + " 억"; // 만 원을 억 단위로 변환
@@ -148,11 +157,12 @@ function calculate() {
     const ltvMaxLoan = price * ltvRatio; // LTV 기준 최대 대출액
 
     let finalLoan = 0; // 최종적으로 고객이 받을 수 있는 대출 금액
+    let cashNeeded = 0; // 최종적으로 고객이 필요한 현금 금액
 
     // --- 모드별 계산 로직 분기 ---
     if (type === 'subscription') {
-        // 청약/분양 주택 로직 (가장 복잡한 로직)
-        const allotmentLoan = price * allotmentRatio; // 건설사 알선 대출액 (분양가 * 알선 비율)
+        // 청약/분양 주택 로직
+        const allotmentLoan = price * allotmentRatio; // 건설사 알선 대출액
         
         // 최종 대출 가능액: DSR, LTV, 알선액 중 가장 낮은 금액
         finalLoan = Math.min(dsrMaxLoan, ltvMaxLoan, allotmentLoan);
@@ -161,10 +171,10 @@ function calculate() {
         const contract = price * 0.1; // 계약금
         const balance = price * 0.3;  // 잔금
         
-        // 중도금 자납액 = (분양가 * 0.6) - 최종 대출 가능액
+        // 중도금 자납액 = (분양가 * 0.6) - 최종 대출 가능액 (음수가 되지 않도록 Math.max(0, ...) 사용)
         const middlePaymentNeeded = Math.max(0, (price * 0.6) - finalLoan); 
         
-        const cashNeeded = contract + balance + middlePaymentNeeded; // 총 현금 필요액
+        cashNeeded = contract + balance + middlePaymentNeeded; // 총 현금 필요액
         var title_final_loan = "최종 대출 가능액 (DSR, LTV, 알선액 중 최솟값)";
         var title_cash_needed = "총 현금 필요액 (계약금+잔금+자납 중도금)";
 
@@ -173,14 +183,13 @@ function calculate() {
         document.getElementById('result-alotment').innerHTML = `건설사 알선 대출 가능액: <strong>${format(allotmentLoan)}</strong>`;
 
     } else {
-        // 일반 주택 매매 로직 (일반 주택 매매 계산기)
+        // 일반 주택 매매 로직
         const requiredLoan = Math.max(0, price - funds); // 주택 매매가 - 보유 자금
         
         // 최종 대출 가능액: DSR, LTV, 필요한 대출액 중 가장 낮은 금액
-        // (알선 비율은 매매 시 100%로 간주하므로, 필요한 대출액이 알선액 역할)
         finalLoan = Math.min(dsrMaxLoan, ltvMaxLoan, requiredLoan);
         
-        const cashNeeded = price - finalLoan; // 총 현금 필요액 = 주택가 - 최종 대출액
+        cashNeeded = price - finalLoan; // 총 현금 필요액 = 주택가 - 최종 대출액
         var title_final_loan = "실제 대출 실행액 (DSR, LTV, 필요액 중 최솟값)";
         var title_cash_needed = "총 현금 필요액 (주택가 - 실행액)";
 
@@ -191,10 +200,6 @@ function calculate() {
     // 4. 최종 결과 계산 및 표시
     const finalShortfall = cashNeeded - funds; // 최종 부족한 자금
     
-    // DSR 대비 초과 비율 (일반 모드에서 사용)
-    const requiredAnnualPayment = calculatePMT(rate, totalMonths, finalLoan);
-    const dsrRatio = requiredAnnualPayment / dsrMaxAnnual;
-
     // 5. 결과 업데이트
     document.getElementById('result-dsr-max').innerHTML = `DSR 기준 최대 대출 가능액: <strong>${format(dsrMaxLoan)}</strong>`;
     document.getElementById('result-ltv-max').innerHTML = `LTV 기준 최대 대출 가능액: <strong>${format(ltvMaxLoan)}</strong>`;
