@@ -51,18 +51,18 @@
             <div>
                 <!-- 수정 2) 연소득 라벨 수정 및 공란으로 변경 -->
                 <label for="income">연소득 (세전, 억 원)</label>
-                <input type="number" id="income" placeholder="예: 1.45" step="0.01">
+                <input type="number" id="income" placeholder="예: 3.5" step="0.01">
             </div>
             <div>
                 <!-- 수정 2) 보유자금 공란으로 변경 -->
                 <label for="funds">보유 자금 (억 원)</label>
-                <input type="number" id="funds" placeholder="예: 15" step="0.1">
+                <input type="number" id="funds" placeholder="예: 30" step="0.1">
             </div>
         </div>
         
         <!-- 주택 매매가 (일반) / 청약 분양가 (청약) -->
         <label id="price-label" for="price">주택 매매가 (억 원)</label>
-        <input type="number" id="price" placeholder="예: 24" step="0.1">
+        <input type="number" id="price" placeholder="예: 50" step="0.1">
         
         <div class="input-group">
             <div>
@@ -89,7 +89,7 @@
     </div>
 
     <!-- 버튼명 수정 -->
-    <button id="calculate-btn" onclick="calculate()">매매 가능성 검토 시작</button>
+    <button id="calculate-btn" onclick="calculate()">투자 가능성 검토 시작</button>
 
     <!-- 결과 표시 -->
     <div class="result-box">
@@ -267,7 +267,7 @@ function calculate() {
             dsrLimitResult.innerHTML = `DSR 기준 최대 대출액: <strong>${dsrMaxLoanFormatted}</strong>`;
             dsrLimitResult.className = 'result-item highlight';
             
-            finalStatusText = `⚠️ **FULL 대출 불가** (DSR 한도 ${dsrMaxAnnualFormatted}/년 초과)`;
+            finalStatusText = `⚠️ **FULL 대출 불가** (자금 한도 초과)`;
         }
 
         document.getElementById('result-cash-needed').innerHTML = `총 현금 필요액 (주택가 - 실행액): <strong>${format(cashNeeded)}</strong>`;
