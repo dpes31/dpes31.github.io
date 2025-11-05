@@ -89,19 +89,21 @@
 </div>
 
 <script>
-// JavaScript Finance Formula: PV (Present Value)
-// 대출 원금 (DSR 기준 최대 대출액) 계산
+// DSR 기준 최대 대출액 (PV) 계산을 위한 JavaScript 함수 (수정됨)
 function calculatePV(rate, nper, pmt) {
-    if (rate === 0) return -pmt * nper;
+    // **수정된 부분: 금리가 0일 경우 예외 처리**
+    if (rate === 0 || rate < 0.0001) return pmt * nper; 
+    
     const monthlyRate = rate / 12;
     // PV 공식: PV = (PMT * [1 - (1 + r)^-n]) / r
     return (pmt * (1 - Math.pow(1 + monthlyRate, -nper))) / monthlyRate;
 }
 
-// JavaScript Finance Formula: PMT (Payment)
-// 필요한 대출 상환액 계산
+// PMT 함수도 동일하게 수정합니다. (PMT 계산이 필요한 '일반 주택 매매' 모드 사용을 위함)
 function calculatePMT(rate, nper, pv) {
-    if (rate === 0) return pv / nper;
+    // **수정된 부분: 금리가 0일 경우 예외 처리**
+    if (rate === 0 || rate < 0.0001) return pv / nper;
+    
     const monthlyRate = rate / 12;
     // PMT 공식: PMT = (PV * r) / [1 - (1 + r)^-n]
     return (pv * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -nper));
