@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>주택 매매/청약 가능성 계산기</title>
     <style>
+        /* CSS: Tailwind 미사용 시 커스텀 스타일 */
         body { font-family: 'Malgun Gothic', sans-serif; padding: 20px; background-color: #f4f4f9; color: #333; }
         .calculator { max-width: 650px; margin: 0 auto; background-color: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
         h2 { color: #007bff; border-bottom: 3px solid #007bff; padding-bottom: 10px; margin-bottom: 25px; text-align: center; }
@@ -15,7 +16,7 @@
         .input-group { display: flex; gap: 20px; }
         .input-group > div { flex: 1; }
         
-        /* 버튼 기본 스타일: ID가 동적으로 바뀌어도 적용되도록 button 태그에 직접 지정 */
+        /* 버튼 기본 스타일 */
         button { margin-top: 30px; padding: 12px 25px; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 18px; width: 100%; transition: background-color 0.3s; }
         
         /* 모드별 색상 스타일 (ID 기반) */
@@ -28,7 +29,14 @@
         .result-item { margin-bottom: 10px; padding: 8px; background-color: #e9ecef; border-radius: 4px; display: flex; justify-content: space-between; font-size: 15px; }
         .result-item strong { color: #007bff; }
         .result-item.highlight { background-color: #fff3cd; border: 1px solid #ffeeba; }
+        
+        /* 부족한 자금 (빨간색) 및 DSR 한도 대출액 강조 */
         .result-item.red-text strong { color: #dc3545; font-weight: bold; }
+        .result-item.red-text.highlight { background-color: #f8d7da; border-color: #f5c6cb; }
+
+        /* 여유 자금 (초록색) - 청약 가능 박스 색상과 통일 */
+        .result-item.green-text { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .result-item.green-text strong { color: #1e7e34; font-weight: bold; }
 
         .result-final { font-size: 1.3em; font-weight: bold; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: center; }
         .result-final.pass { color: #1e7e34; background-color: #d4edda; border: 1px solid #c3e6cb; }
@@ -51,12 +59,10 @@
         
         <div class="input-group">
             <div>
-                <!-- 연소득 (세전, 억 원) -->
                 <label for="income">연소득 (세전, 억 원)</label>
                 <input type="number" id="income" placeholder="예: 3.5" step="0.01">
             </div>
             <div>
-                <!-- 보유 자금 (억 원) -->
                 <label for="funds">보유 자금 (억 원)</label>
                 <input type="number" id="funds" placeholder="예: 30" step="0.1">
             </div>
@@ -84,25 +90,28 @@
         </select>
 
         <!-- 청약 모드에서만 보이는 필드 -->
-        <div id="allotment-group" class="allotment-section">
+        <div id="allotment-group" class="allotment-section" style="display: none;">
             <label for="alotment">건설사 중도금 알선 비율 (%)</label>
             <input type="number" id="alotment" value="40" step="1">
         </div>
     </div>
 
-    <!-- 버튼명 수정 (고객 요청 반영: 기본값 '투자 가능성 검토 시작' 유지) -->
-    <button id="calculate-btn" onclick="calculate()">투자 가능성 검토 시작</button>
+    <button id="calculate-btn" onclick="calculate()">매매 가능성 검토 시작</button>
 
     <!-- 결과 표시 -->
     <div class="result-box">
         <h3>🔍 대출 한도 및 필요 자금 검토</h3>
+        
+        <!-- 공통 - 주택 가격/분양가 -->
+        <div class="result-item" id="result-price"></div>
+
         <!-- 청약 모드 결과 표시 영역 -->
-        <div id="result-subscription-details">
+        <div id="result-subscription-details" style="display: none;">
             <div class="result-item" id="result-dsr-max"></div>
             <div class="result-item" id="result-ltv-max"></div>
             <div class="result-item" id="result-alotment"></div>
-            <div class="result-item" id="result-final-loan"></div>
-            <!-- 청약 모드 추가 항목 -->
+            <div class="result-item highlight" id="result-final-loan"></div>
+            <div class="result-item" id="result-expected-pmt"></div> <!-- 예상 월 상환액 추가 -->
             <div class="result-item" id="result-contract"></div>
             <div class="result-item" id="result-balance"></div>
             <div class="result-item" id="result-middle-payment"></div>
@@ -112,9 +121,12 @@
         <div id="result-general-details">
             <div class="result-item" id="result-general-full-loan"></div>
             <div class="result-item" id="result-general-dsr-limit"></div>
+            <div class="result-item highlight" id="result-final-loan-general"></div>
+            <div class="result-item" id="result-expected-pmt-general"></div> <!-- 예상 월 상환액 추가 -->
         </div>
 
-        <!-- 공통 결과 -->
+        <!-- 공통 최종 검토 -->
+        <div class="result-item" id="result-funds-available"></div> <!-- 보유 자금 추가 -->
         <div class="result-item" id="result-cash-needed"></div>
         <div class="result-item" id="result-shortfall"></div>
         <div class="result-final" id="result-final-status"></div>
@@ -140,24 +152,21 @@ function calculatePMT(rate, nper, pv) {
     return (pv * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -nper));
 }
 
-// 소수점 2자리 반올림 포맷팅 (억 원)
-const format = (num) => (num / 10000).toFixed(2) + " 억"; // 만 원을 억 단위로 변환
+// 금액 포맷팅 (만 원을 억 단위로 변환 후 소수점 2자리 반올림 포맷팅)
+const format = (num) => (num / 10000).toFixed(2) + " 억"; 
+// 월 상환액 포맷팅 (원 단위)
+const formatPMT = (num) => Math.round(num * 10000).toLocaleString() + " 원";
 
 // =========================================================
-// ⚙️ UI 및 필드 토글 (오류 수정 핵심 영역)
+// ⚙️ UI 및 필드 토글
 // =========================================================
 
 function toggleFields() {
-    // **오류 수정 1: ID가 동적으로 변경되는 경우에도 요소를 안정적으로 찾음**
-    let button = document.getElementById('calculate-btn') || 
-                 document.getElementById('calculate-btn-subscription') || 
-                 document.getElementById('calculate-btn-general');
+    let button = document.getElementById('calculate-btn-subscription') || 
+                 document.getElementById('calculate-btn-general') || 
+                 document.getElementById('calculate-btn');
 
-    if (!button) {
-        // 이 오류는 발생해서는 안 되지만, 혹시 모를 상황에 대비
-        console.error("Calculate button element not found.");
-        return;
-    }
+    if (!button) return;
     
     const type = document.getElementById('type').value;
     const allotmentGroup = document.getElementById('allotment-group');
@@ -170,19 +179,21 @@ function toggleFields() {
         priceLabel.textContent = '청약 분양가 (억 원)';
         button.textContent = '청약 가능성 검토 시작'; 
         button.id = 'calculate-btn-subscription'; 
-        button.className = ''; // **오류 수정 2: 클래스를 초기화하여 기본 button 스타일을 유지**
+        button.className = ''; 
     } else {
         // 일반 매매 모드
         allotmentGroup.style.display = 'none';
         priceLabel.textContent = '주택 매매가 (억 원)'; 
         button.textContent = '매매 가능성 검토 시작'; 
         button.id = 'calculate-btn-general';
-        button.className = ''; // **오류 수정 2: 클래스를 초기화하여 기본 button 스타일을 유지**
+        button.className = ''; 
     }
 
     // 결과 창 초기화
     document.getElementById('result-subscription-details').style.display = 'none';
     document.getElementById('result-general-details').style.display = 'none';
+    document.getElementById('result-price').textContent = '';
+    document.getElementById('result-funds-available').textContent = '';
     document.getElementById('result-shortfall').textContent = '';
     document.getElementById('result-cash-needed').textContent = '';
     document.getElementById('result-final-status').textContent = '';
@@ -198,6 +209,7 @@ window.onload = toggleFields;
 function calculate() {
     // 1. 입력 값 검증 및 변환 (만 원 단위)
     const type = document.getElementById('type').value;
+    // 입력된 억 단위 -> 만 원 단위로 변환
     const income = parseFloat(document.getElementById('income').value) * 10000;
     const funds = parseFloat(document.getElementById('funds').value) * 10000;
     const price = parseFloat(document.getElementById('price').value) * 10000;
@@ -209,7 +221,9 @@ function calculate() {
 
     // 필수 입력값 검증
     if (isNaN(income) || isNaN(funds) || isNaN(price) || income <= 0 || price <= 0) {
-        alert('연소득, 보유 자금, 주택/분양가를 정확히 입력해주세요.');
+        console.error('연소득, 보유 자금, 주택/분양가를 정확히 입력해주세요.');
+        document.getElementById('result-final-status').innerHTML = '❌ **입력 오류** (필수 항목을 확인하세요)';
+        document.getElementById('result-final-status').className = 'result-final fail';
         return;
     }
     
@@ -228,65 +242,77 @@ function calculate() {
     let finalLoan = 0;
     let cashNeeded = 0;
     let finalStatusText = '';
+    let expectedPMT = 0;
+    
+    // 공통 - 주택/분양가 표시 (일반 매매 시 주택 매매가로 수정 요청 반영)
+    const priceLabelText = type === 'general' ? '주택 매매가' : '주택/분양가';
+    document.getElementById('result-price').innerHTML = `${priceLabelText}: <strong>${format(price)}</strong>`;
 
     // --- 1. 일반 주택 매매 로직 ---
     if (type === 'general') {
         
-        // FULL 대출액 = 주택 매매가 - 보유자금
-        const fullLoan = Math.max(0, price - funds);
-        const requiredAnnualPayment = calculatePMT(rate, totalMonths, fullLoan) * 12;
+        const fullLoanRequired = Math.max(0, price - funds); // 보유 자금 제외하고 필요한 대출액
+        const requiredAnnualPayment = calculatePMT(rate, totalMonths, fullLoanRequired) * 12;
         
         // DSR 기준 연간 상환 가능액 (억 원)
-        const dsrMaxAnnualFormatted = format(dsrMaxAnnual); 
         const dsrMaxLoanFormatted = format(dsrMaxLoan);
 
         // 결과 항목 DOM
         const fullLoanResult = document.getElementById('result-general-full-loan');
         const dsrLimitResult = document.getElementById('result-general-dsr-limit');
+        const finalLoanResultGeneral = document.getElementById('result-final-loan-general');
+        const pmtGeneralResult = document.getElementById('result-expected-pmt-general');
 
         // UI 초기화
         fullLoanResult.className = 'result-item';
         dsrLimitResult.className = 'result-item';
+        finalLoanResultGeneral.className = 'result-item highlight';
 
         // A. FULL 대출 가능 여부 검토
         if (requiredAnnualPayment <= dsrMaxAnnual) {
-            // FULL 대출 가능 (연간 상환액이 DSR 한도보다 낮음)
+            // FULL 대출 가능 (DSR 한도 이내)
             
-            finalLoan = Math.min(fullLoan, ltvMaxLoan); // LTV도 함께 검토
+            finalLoan = Math.min(fullLoanRequired, ltvMaxLoan); // LTV와 실제 필요액 중 작은 값
             cashNeeded = price - finalLoan;
             
-            // 표시 로직 (빨간색 강조)
-            fullLoanResult.innerHTML = `FULL 대출 가능액: <strong>${format(finalLoan)}</strong>`;
+            // 표시 로직 
+            fullLoanResult.innerHTML = `FULL 대출 (주택가-보유자금 ${format(fullLoanRequired)}) **가능**`;
             fullLoanResult.className = 'result-item red-text highlight';
             
-            dsrLimitResult.innerHTML = `DSR 기준 최대 상환 가능액: <strong>${dsrMaxAnnualFormatted}/년</strong>`;
+            dsrLimitResult.innerHTML = `DSR 기준 최대 대출액: <strong>${dsrMaxLoanFormatted}</strong>`;
             dsrLimitResult.className = 'result-item';
             
-            finalStatusText = `✅ **FULL 대출 가능** (DSR 한도 ${dsrMaxAnnualFormatted}/년 이내)`;
+            finalStatusText = `✅ **주택 매매 가능**`;
 
         } else {
-            // FULL 대출 불가 (연간 상환액이 DSR 한도보다 높음)
+            // FULL 대출 불가 (DSR 한도 초과)
             
             // 대출 가능액은 DSR 한도와 LTV 한도 중 작은 값
             finalLoan = Math.min(dsrMaxLoan, ltvMaxLoan);
             cashNeeded = price - finalLoan;
 
-            // 표시 로직
-            fullLoanResult.innerHTML = `FULL 대출 (필요액 ${format(fullLoan)}) **불가**`;
+            // 표시 로직 (FULL 대출 불가 시 문구 및 금액 강조 요청 반영)
+            fullLoanResult.innerHTML = `FULL 대출(주택가-보유자금 ${format(fullLoanRequired)}) **불가**`;
             fullLoanResult.className = 'result-item red-text';
             
-            dsrLimitResult.innerHTML = `DSR 기준 최대 대출액: <strong>${dsrMaxLoanFormatted}</strong>`;
-            dsrLimitResult.className = 'result-item highlight';
+            dsrLimitResult.innerHTML = `DSR 한도 기준 최대 대출액: <strong>${dsrMaxLoanFormatted}</strong>`;
+            dsrLimitResult.className = 'result-item red-text highlight'; // 불가 시 금액 강조 
             
-            // FULL 대출 실패 시 강조 문구
-            finalStatusText = `⚠️ **FULL 대출 불가** (DSR 한도 ${dsrMaxAnnualFormatted}/년 초과)`;
+            finalStatusText = `⚠️ **FULL 대출 불가** (자금 한도 초과)`;
         }
+        
+        // 최종 대출액 표시 및 예상 월 상환액 계산 (요청 반영)
+        expectedPMT = calculatePMT(rate, totalMonths, finalLoan);
+        
+        finalLoanResultGeneral.innerHTML = `최종 대출 실행 가능액: <strong>${format(finalLoan)}</strong>`;
+        pmtGeneralResult.innerHTML = `최종 실행액 기준 예상 월 상환액 (${term}년, ${rate*100}%): <strong>${formatPMT(expectedPMT)}</strong>`;
 
-        document.getElementById('result-cash-needed').innerHTML = `총 현금 필요액 (주택가 - 실행액): <strong>${format(cashNeeded)}</strong>`;
+        // 총 현금 필요액 라벨 수정 요청 반영
+        document.getElementById('result-cash-needed').innerHTML = `총 현금 필요액 (주택가 - 최종 실행액): <strong>${format(cashNeeded)}</strong>`;
     
     // --- 2. 청약/분양 주택 로직 ---
     } else {
-        const allotmentLoan = price * allotmentRatio; // 건설사 알선 대출액
+        const allotmentLoan = price * allotmentRatio; // 건설사 알선 대출액 (만 원 단위)
 
         // 최종 대출 가능액: DSR, LTV, 알선액 중 가장 낮은 금액
         finalLoan = Math.min(dsrMaxLoan, ltvMaxLoan, allotmentLoan);
@@ -298,15 +324,17 @@ function calculate() {
 
         cashNeeded = contract + balance + middlePaymentNeeded; // 총 현금 필요액
         
+        // 최종 대출액 기준 예상 월 상환액 계산 (요청 반영)
+        expectedPMT = calculatePMT(rate, totalMonths, finalLoan);
+
         // 결과 UI 업데이트 
         document.getElementById('result-dsr-max').innerHTML = `(1) DSR 기준 최대 대출 가능액: <strong>${format(dsrMaxLoan)}</strong>`;
         document.getElementById('result-ltv-max').innerHTML = `(2) LTV 기준 최대 대출 가능액: <strong>${format(ltvMaxLoan)}</strong>`;
-        // 알선 비율 노출
         document.getElementById('result-alotment').innerHTML = `(3) 건설사 알선 대출 가능액 (중도금 ${allotmentRatio * 100}%): <strong>${format(allotmentLoan)}</strong>`;
-        // 최종 대출 가능액 라벨 수정
-        document.getElementById('result-final-loan').innerHTML = `최종 대출 가능액 ((1~3) 중 최소값): <strong>${format(finalLoan)}</strong>`;
         
-        // 추가 항목
+        document.getElementById('result-final-loan').innerHTML = `최종 대출 실행 가능액 ((1~3) 중 최소값): <strong>${format(finalLoan)}</strong>`;
+        document.getElementById('result-expected-pmt').innerHTML = `최종 실행액 기준 예상 월 상환액 (${term}년, ${rate*100}%): <strong>${formatPMT(expectedPMT)}</strong>`;
+        
         document.getElementById('result-contract').innerHTML = `ㄴ 계약금 (분양가 10%): <strong>${format(contract)}</strong>`;
         document.getElementById('result-balance').innerHTML = `ㄴ 잔금 (분양가 30%): <strong>${format(balance)}</strong>`;
         document.getElementById('result-middle-payment').innerHTML = `ㄴ 자납 중도금: <strong>${format(middlePaymentNeeded)}</strong>`;
@@ -319,17 +347,25 @@ function calculate() {
     const finalShortfall = cashNeeded - funds; 
     const shortfallElement = document.getElementById('result-shortfall');
     const finalStatusElement = document.getElementById('result-final-status');
+    const fundsElement = document.getElementById('result-funds-available'); 
+
+    // 보유 자금 표시
+    fundsElement.innerHTML = `보유 자금: <strong>${format(funds)}</strong>`;
 
     if (finalShortfall <= 0) {
+        // 청약 모드: 자금 여유액 항목 색상 변경 요청 반영 (초록색 강조)
         shortfallElement.innerHTML = `자금 여유액: <strong>${format(Math.abs(finalShortfall))}</strong>`;
-        shortfallElement.style.color = '#1e7e34';
-        // 일반 모드에서는 finalStatusText가 이미 DSR 결과로 설정됨
-        finalStatusElement.innerHTML = finalStatusText || `✅ **${type === 'subscription' ? '청약' : '주택 매매'} 가능**`;
+        shortfallElement.className = 'result-item green-text'; 
+        
+        // 최종 상태 문구 설정
+        let status = type === 'subscription' ? '청약 가능' : '주택 매매 가능';
+        finalStatusElement.innerHTML = finalStatusText || `✅ **${status}**`;
         finalStatusElement.className = 'result-final pass';
     } else {
         shortfallElement.innerHTML = `**부족한 자금:** <strong>${format(finalShortfall)}</strong>`;
-        shortfallElement.style.color = '#dc3545';
-        // 일반 모드에서는 finalStatusText가 이미 DSR 결과로 설정됨
+        shortfallElement.className = 'result-item red-text'; 
+        
+        // 최종 상태 문구 설정
         finalStatusElement.innerHTML = finalStatusText || `❌ **자금 부족** (대출 및 보유 자금 한도 초과)`;
         finalStatusElement.className = 'result-final fail';
     }
