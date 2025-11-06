@@ -284,7 +284,7 @@
             document.getElementById('sub-flowBalance').textContent = `${formatToBillion(balancePayment, 2)} (${formatToPercent(balanceRatio)})`;
             // 자납 중도금 (금액 + 비율)
             document.getElementById('sub-flowSelfInterim').textContent = `${formatToBillion(selfInterimPayment, 2)} (${formatToPercent(selfInterimRatio)})`;
-            // 건설사 알선 중도금 대출 전환분 (금액 + 비율)
+            // 건설사 알선 중도금 대출 (금액 + 비율)
             document.getElementById('sub-flowLoanCoveredInterim').textContent = `${formatToBillion(loanCoveredInterimPayment, 2)} (${formatToPercent(loanCoveredInterimRatio)})`;
 
 
@@ -701,13 +701,13 @@
 
                         <!-- 5. 최종 대출액 (자금 조달) -->
                         <div class="flex justify-between items-center py-2 border-b border-t-2 border-primary-blue/50">
-                            <span class="text-xl font-bold text-gray-800">자금 조달: 최종 대출액 (주담대 전환)</span>
+                            <span class="text-xl font-bold text-gray-800">자금 조달: 최종 대출액 </span>
                             <span class="font-bold text-accent-green" id="sub-flowFinalLoan">0.00억</span>
                         </div>
                         
                         <!-- 알선 중도금 대출 전환분 (참고 정보) -->
                         <div class="flex justify-between items-center py-2 border-b border-dotted pl-4 text-sm">
-                            <span class="text-gray-500">└ 건설사 알선 중도금 대출 전환분</span>
+                            <span class="text-gray-500">└ 건설사 알선 중도금 대출</span>
                             <span class="font-bold text-gray-700" id="sub-flowLoanCoveredInterim">0.00억 (0%)</span> 
                         </div>
                         
