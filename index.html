@@ -22,12 +22,19 @@
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
         th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #dee2e6; }
         th { background: #f1f3f5; font-weight: 600; }
-        .group { background: #e7f3ff; font-weight: bold; text-align: center; font-size: 0.9rem; }
+        .group { background: #e7f3ff; font-weight: bold; text-align: left; padding-left: 12px; font-size: 0.9rem; position: relative; }
+        .group-total { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #007bff; font-weight: bold; background: #e7f3ff; padding: 0 8px; border-radius: 4px; }
         .total { font-weight: bold; background: #fff9db; }
         .highlight { font-size: 1.1rem; color: #007bff; }
         .possible { color: #28a745; font-weight: bold; }
         .impossible { color: #dc3545; font-weight: bold; }
-        #footer-note { margin-top: 32px; font-size: 0.8rem; color: #6c757d; line-height: 1.5; }
+        #interest-section { margin-top: 32px; padding: 20px; background: #f8f9fa; border-radius: 12px; font-size: 0.95rem; }
+        #interest-section h3 { font-size: 1.1rem; margin: 0 0 12px; color: #495057; }
+        #interest-section .monthly { font-size: 1.3rem; font-weight: bold; color: #007bff; margin: 8px 0; }
+        #interest-section .total-int { font-size: 1rem; color: #495057; margin: 4px 0; }
+        #interest-section small { display: block; color: #6c757d; margin-top: 12px; font-size: 0.85rem; line-height: 1.4; }
+        .tip-box { margin-top: 32px; padding: 16px; background: #e9f7ff; border-left: 4px solid #007bff; border-radius: 0 8px 8px 0; font-size: 0.9rem; color: #495057; line-height: 1.6; }
+        .tip-box strong { color: #007bff; }
         #alert-popup { display: none; position: fixed; top: 16px; left: 16px; right: 16px; background: #fff3cd; border: 1px solid #ffeaa7; padding: 12px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
         .close-btn { float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer; }
     </style>
@@ -74,6 +81,10 @@
             <small style="color:#6c757d;">2025 규제 기본 40% · 회차별 다름</small>
         </div>
 
+        <label>대출 금리 (%)</label>
+        <input type="number" id="interestRate" placeholder="3.3" step="0.1">
+        <small style="color:#6c757d;">기본 3.3% (고정금리 추천: 금리 상승기 안정)</small>
+
         <button type="button" onclick="calculate()">계산하기</button>
     </form>
 
@@ -83,17 +94,25 @@
             <tbody id="receiptTable"></tbody>
         </table>
         <p id="feasibility" style="margin:16px 0 0; font-size:1.1rem;"></p>
+
+        <div id="interest-section">
+            <h3>월 상환액 추정 (원금 균등 30년)</h3>
+            <div class="monthly" id="monthly-payment"></div>
+            <div class="total-int" id="total-interest"></div>
+            <small>※ 원금 균등: 매월 원금 동일 상환 → 초기 이자 많지만 점차 ↓ (원리금 균등보다 초기 부담 적고 총이자 비슷)</small>
+        </div>
+
+        <div class="tip-box">
+            <strong>쉽게 이해하기</strong><br>
+            • 대출 가능액 = LTV·DSR·청약한도 중 가장 낮은 금액<br>
+            • 중도금 대출 = 가격 × 비율 (청약 초기 부담 ↓, 잔금 때 은행 대출로 상환)<br>
+            • 실제 내가 내야 할 돈 = 가격 + 비용 - (잔금대출 + 중도금대출)<br>
+            • 잔여 자산 = 보유 자산 - 내가 내야 할 돈 → 0억 이상이면 투자 가능!
+        </div>
     </div>
 
     <div id="alert-popup">
         ⚠️ 법규 변경 알림 <button class="close-btn" onclick="this.parentElement.style.display='none'">×</button>
-    </div>
-
-    <div id="footer-note">
-        • 대출 가능액 = LTV·DSR·청약한도 중 가장 낮은 금액<br>
-        • 중도금 대출 = 가격 × 비율 (청약 초기 부담 ↓, 잔금 때 은행 대출로 상환)<br>
-        • 자기 부담액 = 가격 + 비용 - (잔금대출 + 중도금대출)<br>
-        • 잔여 자산 = 보유 자산 - 자기 부담액 → 0 이상이면 투자 가능
     </div>
 
     <script>
@@ -103,7 +122,8 @@
             dsrMultiplier: 4.5,
             lotteryLimit: { low: 6, high15: 4, high25: 2 },
             midDefault: 40,
-            costs: { bro: 0.005, tax: 0.015, etc: 0.1 }
+            costs: { bro: 0.005, tax: 0.015, etc: 0.1 },
+            defaultRate: 3.3
         };
 
         function toggleMidLoan() {
@@ -122,7 +142,6 @@
             document.getElementById('lottery-limit').style.display = 'block';
         }
 
-        // 입력란 클릭 시 placeholder 지우기
         document.querySelectorAll('input[type=number]').forEach(inp => {
             inp.addEventListener('focus', function() { if(this.value === '' || this.value === this.placeholder) this.value = ''; });
             inp.addEventListener('blur', function() { if(this.value === '') this.value = this.placeholder; });
@@ -138,17 +157,15 @@
             const income = parseFloat(document.getElementById('income').value) || 0;
             const houses = document.getElementById('houses').value;
             const midRate = type === 'lottery' ? parseFloat(document.getElementById('midLoanRate').value) || 40 : 0;
+            const rate = parseFloat(document.getElementById('interestRate').value) || reg.defaultRate;
 
-            // LTV
             let ltv = reg.ltv[region];
             if (houses === 'multi' && (region === 'seoul' || region === 'capital')) ltv = 0;
             if (type === 'lottery' && houses === '0') ltv = 0.7;
             const ltvAmt = price * ltv;
 
-            // DSR
             const dsrAmt = income * reg.dsrMultiplier;
 
-            // 청약 잔금대출 한도
             let finalLoan = Math.min(ltvAmt, dsrAmt);
             if (type === 'lottery') {
                 let cap = reg.lotteryLimit.low;
@@ -158,40 +175,39 @@
                 finalLoan = Math.min(finalLoan, cap);
             }
 
-            // 중도금 대출
             const midLoan = type === 'lottery' ? price * (midRate / 100) : 0;
 
-            // 비용
             const bro = price * reg.costs.bro;
             const tax = price * reg.costs.tax;
             const etc = reg.costs.etc;
             const totalCost = bro + tax + etc;
 
-            // 최종 부담
             const outlay = price + totalCost - finalLoan - midLoan;
             const remain = assets - outlay;
 
             const ok = remain >= 0;
 
-            // 이유 문자열
+            const totalLoan = finalLoan + midLoan;
+
             const reason = type === 'lottery' 
-                ? `청약한도 ${finalLoan < price * 0.7 ? finalLoan : price * 0.7}억 적용` 
+                ? `청약한도 ${finalLoan < price * 0.7 ? finalLoan.toFixed(1) : (price * 0.7).toFixed(1)}억 적용` 
                 : `LTV ${ltv*100}%`;
 
+            // 각 그룹별 합산만 해당 행에 출력 (오류 수정)
             document.getElementById('receiptTable').innerHTML = `
-                <tr class="group"><td colspan="3">주택 가격</td></tr>
+                <tr class="group"><td colspan="3">주택 가격 <span class="group-total">${price.toFixed(1)}억</span></td></tr>
                 <tr><td>분양/매매가</td><td>${price.toFixed(1)}</td><td></td></tr>
 
-                <tr class="group"><td colspan="3">추가 비용</td></tr>
+                <tr class="group"><td colspan="3">추가 비용 <span class="group-total">${totalCost.toFixed(2)}억</span></td></tr>
                 <tr><td>중개수수료</td><td>${bro.toFixed(2)}</td><td>0.5%</td></tr>
                 <tr><td>취득세</td><td>${tax.toFixed(2)}</td><td>1.5%</td></tr>
                 <tr><td>기타</td><td>${etc.toFixed(1)}</td><td>등기 등</td></tr>
 
-                <tr class="group"><td colspan="3">받을 수 있는 대출</td></tr>
+                <tr class="group"><td colspan="3">받을 수 있는 대출 <span class="group-total">${totalLoan.toFixed(1)}억</span></td></tr>
                 <tr><td>잔금대출 (은행)</td><td>${finalLoan.toFixed(1)}</td><td>${reason}</td></tr>
                 ${midLoan > 0 ? `<tr><td>중도금대출 (건설사)</td><td>${midLoan.toFixed(1)}</td><td>${midRate}% 알선 (잔금 상환)</td></tr>` : ''}
 
-                <tr class="group total"><td>실제 내가 내야 할 돈</td><td>${outlay.toFixed(1)}</td><td>가격+비용-대출</td></tr>
+                <tr class="group total"><td colspan="3">실제 내가 내야 할 돈 <span class="group-total">${outlay.toFixed(1)}억</span></td></tr>
                 <tr class="total"><td>잔여 자산</td><td class="highlight">${remain.toFixed(1)}</td><td>보유 ${assets.toFixed(1)}억에서 차감</td></tr>
             `;
 
@@ -199,9 +215,18 @@
                 ${ok ? '투자 가능!' : '아직 무리예요'} (${ok ? '잔여 ' + remain.toFixed(1) + '억' : Math.abs(remain).toFixed(1) + '억 부족'})
             </span>`;
 
+            const periods = 360;
+            const monthlyPrincipal = totalLoan / periods * 10000;
+            const avgMonthlyInterest = (totalLoan * (rate / 100) / 12) / 2 * 10000;
+            const avgMonthlyPayment = monthlyPrincipal + avgMonthlyInterest;
+            const totalInterest = avgMonthlyInterest * periods / 10000;
+
+            document.getElementById('monthly-payment').innerHTML = `${Math.round(avgMonthlyPayment).toLocaleString()} 만원/월`;
+            document.getElementById('total-interest').innerHTML = `총 이자 약 ${totalInterest.toFixed(0)}억 원 (30년 기준)`;
+
             document.getElementById('result').style.display = 'block';
             window.scrollTo(0, document.getElementById('result').offsetTop - 20);
         }
     </script>
 </body>
-</html></html>
+</html>
