@@ -79,7 +79,7 @@
         <div class="mid-loan">
             <label>건설사 알선 <span class="underline">중도금 대출 비율</span> (%)</label>
             <input type="number" id="midLoanRate" placeholder="40" step="5" min="0" max="60">
-            <small style="color:#6c757d;">2025 규제 기본 40% · 회차별 다름</small>
+            <small style="color:#6c757d;">2025 규제 기본 40% · 잔금 전환 시 한도 적용</small>
         </div>
 
         <label>대출 금리 (%)</label>
@@ -111,15 +111,16 @@
                 </div>
             </div>
             <div style="text-align:center; margin-top:16px; font-size:0.9rem; color:#6c757d;">
-                총 대출 <span id="total-loan-display"></span>억 기준 · 실제 은행 심사 시 약간 다를 수 있음
+                최종 대출 <span id="total-loan-display"></span>억 기준 · 실제 은행 심사 시 약간 다를 수 있음
             </div>
         </div>
 
         <div class="tip-box">
-            <strong>쉽게 이해하기</strong><br>
-            • 대출 가능액 = LTV·DSR·청약한도 중 가장 낮은 금액<br>
-            • 중도금 대출 = 가격 × 비율 (청약 초기 부담 ↓, 잔금 때 은행 대출로 상환)<br>
-            • 실제 내가 내야 할 돈 = 가격 + 비용 - (잔금대출 + 중도금대출)<br>
+            <strong>쉽게 이해하기 (2025.10.15 대책 적용)</strong><br>
+            • 중도금 대출은 입주 전 임시 대출 → 잔금 시 은행 대출로 전환 (분양가별 한도 적용)<br>
+            • 총 대출 한도 = 잔금대출 한도 (15억 이하 6억, 15~25억 4억, 25억+ 2억)<br>
+            • 중도금 초과분 + 잔금은 현금 필수!<br>
+            • 실제 내가 내야 할 돈 = 가격 + 비용 - 최종 대출 한도<br>
             • 잔여 자산 = 보유 자산 - 내가 내야 할 돈 → 0억 이상이면 투자 가능!
         </div>
     </div>
@@ -147,7 +148,7 @@
             let cap = reg.lotteryLimit.low;
             if (price > 25) cap = reg.lotteryLimit.high25;
             else if (price > 15) cap = reg.lotteryLimit.high15;
-            document.getElementById('lottery-limit').innerHTML = `청약 잔금대출 한도: ${cap}억 원 (법정 상한)`;
+            document.getElementById('lottery-limit').innerHTML = `최종 대출 한도: ${cap}억 원 (중도금 포함, 잔금 전환 시 적용)`;
             document.getElementById('lottery-limit').style.display = 'block';
         }
 
@@ -168,41 +169,48 @@
             const midRate = type === 'lottery' ? parseFloat(document.getElementById('midLoanRate').value) || 40 : 0;
             const rate = parseFloat(document.getElementById('interestRate').value) || reg.defaultRate;
 
+            // LTV 계산
             let ltv = reg.ltv[region];
             if (houses === 'multi' && (region === 'seoul' || region === 'capital')) ltv = 0;
             if (type === 'lottery' && houses === '0') ltv = 0.7;
             const ltvAmt = price * ltv;
 
+            // DSR
             const dsrAmt = income * reg.dsrMultiplier;
 
-            let finalLoan = Math.min(ltvAmt, dsrAmt);
+            // 최종 대출 한도 (청약: 분양가별 한도 + LTV/DSR 중 최소)
+            let finalLoan = type === 'buy' ? Math.min(ltvAmt, dsrAmt) : 0;
             if (type === 'lottery') {
                 let cap = reg.lotteryLimit.low;
                 if (price > 25) cap = reg.lotteryLimit.high25;
                 else if (price > 15) cap = reg.lotteryLimit.high15;
                 if (region !== 'local') cap = Math.min(cap, 6);
-                finalLoan = Math.min(finalLoan, cap);
+                finalLoan = Math.min(ltvAmt, dsrAmt, cap);  // 청약 한도 강제 적용
             }
 
-            const midLoan = type === 'lottery' ? price * (midRate / 100) : 0;
+            // 중도금 대출 (임시, 전환 시 한도 내 상환)
+            const midLoanPossible = type === 'lottery' ? price * (midRate / 100) : 0;
+            const midCashNeeded = midLoanPossible > finalLoan ? midLoanPossible - finalLoan : 0;  // 초과분 현금
 
+            // 비용
             const bro = price * reg.costs.bro;
             const tax = price * reg.costs.tax;
             const etc = reg.costs.etc;
             const totalCost = bro + tax + etc;
 
-            const outlay = price + totalCost - finalLoan - midLoan;
+            // 실제 부담 (중도금 초과 + 잔금 + 비용)
+            const contract = price * 0.1;  // 계약금 현금
+            const midTotal = price * 0.6;
+            const balance = price * 0.3;
+            const outlay = contract + (midTotal - midLoanPossible) + midCashNeeded + balance + totalCost;
             const remain = assets - outlay;
 
             const ok = remain >= 0;
 
-            const totalLoan = finalLoan + midLoan;
-
             const reason = type === 'lottery' 
-                ? `청약한도 ${finalLoan < price * 0.7 ? finalLoan.toFixed(1) : (price * 0.7).toFixed(1)}억 적용` 
+                ? `청약한도 ${finalLoan.toFixed(1)}억 (중도금 포함 전환)` 
                 : `LTV ${ltv*100}%`;
 
-            // 완전 깔끔한 테이블 (합산 수치 완전 삭제)
             document.getElementById('receiptTable').innerHTML = `
                 <tr class="group"><td colspan="3">주택 가격</td></tr>
                 <tr><td>분양/매매가</td><td>${price.toFixed(1)}</td><td></td></tr>
@@ -212,12 +220,12 @@
                 <tr><td>취득세</td><td>${tax.toFixed(2)}</td><td>1.5%</td></tr>
                 <tr><td>기타</td><td>${etc.toFixed(1)}</td><td>등기 등</td></tr>
 
-                <tr class="group"><td colspan="3">받을 수 있는 대출</td></tr>
-                <tr><td>잔금대출 (은행)</td><td>${finalLoan.toFixed(1)}</td><td>${reason}</td></tr>
-                ${midLoan > 0 ? `<tr><td>중도금대출 (건설사)</td><td>${midLoan.toFixed(1)}</td><td>${midRate}% 알선 (잔금 상환)</td></tr>` : ''}
-                <tr><td><strong>합계</strong></td><td><strong>${totalLoan.toFixed(1)}</strong></td><td></td></tr>
+                <tr class="group"><td colspan="3">대출 (최종 한도)</td></tr>
+                <tr><td>최종 대출 (은행)</td><td>${finalLoan.toFixed(1)}</td><td>${reason}</td></tr>
+                ${type === 'lottery' ? `<tr><td>중도금 대출 (건설사)</td><td>${midLoanPossible.toFixed(1)}</td><td>임시 ${midRate}% (잔금 전환)</td></tr>` : ''}
+                ${midCashNeeded > 0 ? `<tr><td>중도금 초과 현금</td><td>${midCashNeeded.toFixed(1)}</td><td>한도 초과분</td></tr>` : ''}
 
-                <tr class="group total"><td>실제 내가 내야 할 돈</td><td>${outlay.toFixed(1)}</td><td>가격+비용-대출</td></tr>
+                <tr class="group total"><td>실제 내가 내야 할 돈</td><td>${outlay.toFixed(1)}</td><td>현금 총액</td></tr>
                 <tr class="total"><td>잔여 자산</td><td class="highlight">${remain.toFixed(1)}</td><td>보유 ${assets.toFixed(1)}억에서 차감</td></tr>
             `;
 
@@ -225,8 +233,8 @@
                 ${ok ? '투자 가능!' : '아직 무리예요'} (${ok ? '잔여 ' + remain.toFixed(1) + '억' : Math.abs(remain).toFixed(1) + '억 부족'})
             </span>`;
 
-            // 정확한 상환액 계산
-            const P = totalLoan * 100000000; // 원 단위
+            // 상환액 (최종 대출 한도 기준)
+            const P = finalLoan * 100000000;
             const r = rate / 100 / 12;
             const n = 360;
 
@@ -247,7 +255,7 @@
 
             document.getElementById('monthly-equal-principal').innerHTML = `${Math.round(avgMonthlyEqual / 10000).toLocaleString()} 만원`;
             document.getElementById('monthly-level-payment').innerHTML = `${Math.round(monthlyLevel / 10000).toLocaleString()} 만원`;
-            document.getElementById('total-loan-display').innerHTML = totalLoan.toFixed(1);
+            document.getElementById('total-loan-display').innerHTML = finalLoan.toFixed(1);
 
             document.getElementById('result').style.display = 'block';
             window.scrollTo(0, document.getElementById('result').offsetTop - 20);
