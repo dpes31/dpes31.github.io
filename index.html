@@ -20,19 +20,20 @@
         button:active { background: #0056b3; }
         #result { margin-top: 32px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: none; }
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
-        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #dee2e6; }
-        th { background: #f1f3f5; font-weight: 600; }
-        .group { background: #e7f3ff; font-weight: bold; text-align: left; padding-left: 12px; font-size: 0.9rem; position: relative; }
-        .group-total { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #007bff; font-weight: bold; background: #e7f3ff; padding: 0 8px; border-radius: 4px; }
+        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        .group { background: #e7f3ff; font-weight: bold; font-size: 1rem; }
         .total { font-weight: bold; background: #fff9db; }
-        .highlight { font-size: 1.1rem; color: #007bff; }
+        .highlight { font-size: 1.2rem; color: #007bff; font-weight: bold; }
         .possible { color: #28a745; font-weight: bold; }
         .impossible { color: #dc3545; font-weight: bold; }
-        #interest-section { margin-top: 32px; padding: 20px; background: #f8f9fa; border-radius: 12px; font-size: 0.95rem; }
-        #interest-section h3 { font-size: 1.1rem; margin: 0 0 12px; color: #495057; }
-        #interest-section .monthly { font-size: 1.3rem; font-weight: bold; color: #007bff; margin: 8px 0; }
-        #interest-section .total-int { font-size: 1rem; color: #495057; margin: 4px 0; }
-        #interest-section small { display: block; color: #6c757d; margin-top: 12px; font-size: 0.85rem; line-height: 1.4; }
+        #interest-section { margin-top: 32px; padding: 20px; background: #f8f9fa; border-radius: 12px; }
+        #interest-section h3 { font-size: 1.1rem; margin: 0 0 16px; color: #495057; text-align: center; }
+        .repay-box { display: flex; justify-content: space-around; gap: 16px; }
+        .repay-card { flex: 1; background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .repay-card.recommend { border: 3px solid #007bff; }
+        .repay-card h4 { margin: 0 0 8px; font-size: 1rem; color: #495057; }
+        .repay-card .monthly { font-size: 1.4rem; font-weight: bold; color: #007bff; margin: 8px 0; }
+        .repay-card small { display: block; color: #6c757d; font-size: 0.8rem; margin-top: 8px; line-height: 1.4; }
         .tip-box { margin-top: 32px; padding: 16px; background: #e9f7ff; border-left: 4px solid #007bff; border-radius: 0 8px 8px 0; font-size: 0.9rem; color: #495057; line-height: 1.6; }
         .tip-box strong { color: #007bff; }
         #alert-popup { display: none; position: fixed; top: 16px; left: 16px; right: 16px; background: #fff3cd; border: 1px solid #ffeaa7; padding: 12px; border-radius: 8px; font-size: 0.9rem; z-index: 1000; }
@@ -96,10 +97,22 @@
         <p id="feasibility" style="margin:16px 0 0; font-size:1.1rem;"></p>
 
         <div id="interest-section">
-            <h3>월 상환액 추정 (원금 균등 30년)</h3>
-            <div class="monthly" id="monthly-payment"></div>
-            <div class="total-int" id="total-interest"></div>
-            <small>※ 원금 균등: 매월 원금 동일 상환 → 초기 이자 많지만 점차 ↓ (원리금 균등보다 초기 부담 적고 총이자 비슷)</small>
+            <h3>월 상환액 비교 (30년 기준)</h3>
+            <div class="repay-box">
+                <div class="repay-card recommend">
+                    <h4>원금 균등 상환 <span style="color:#007bff;">(추천)</span></h4>
+                    <div class="monthly" id="monthly-equal-principal"></div>
+                    <small>초기 부담 적음<br>총이자 ↓ (평균 5~10% 절감)</small>
+                </div>
+                <div class="repay-card">
+                    <h4>원리금 균등 상환</h4>
+                    <div class="monthly" id="monthly-level-payment"></div>
+                    <small>매월 동일 금액<br>초기 이자 비중 높음</small>
+                </div>
+            </div>
+            <div style="text-align:center; margin-top:16px; font-size:0.9rem; color:#6c757d;">
+                총 대출 <span id="total-loan-display"></span>억 기준 · 실제 은행 심사 시 약간 다를 수 있음
+            </div>
         </div>
 
         <div class="tip-box">
@@ -109,10 +122,6 @@
             • 실제 내가 내야 할 돈 = 가격 + 비용 - (잔금대출 + 중도금대출)<br>
             • 잔여 자산 = 보유 자산 - 내가 내야 할 돈 → 0억 이상이면 투자 가능!
         </div>
-    </div>
-
-    <div id="alert-popup">
-        ⚠️ 법규 변경 알림 <button class="close-btn" onclick="this.parentElement.style.display='none'">×</button>
     </div>
 
     <script>
@@ -193,21 +202,22 @@
                 ? `청약한도 ${finalLoan < price * 0.7 ? finalLoan.toFixed(1) : (price * 0.7).toFixed(1)}억 적용` 
                 : `LTV ${ltv*100}%`;
 
-            // 각 그룹별 합산만 해당 행에 출력 (오류 수정)
+            // 완전 깔끔한 테이블 (합산 수치 완전 삭제)
             document.getElementById('receiptTable').innerHTML = `
-                <tr class="group"><td colspan="3">주택 가격 <span class="group-total">${price.toFixed(1)}억</span></td></tr>
+                <tr class="group"><td colspan="3">주택 가격</td></tr>
                 <tr><td>분양/매매가</td><td>${price.toFixed(1)}</td><td></td></tr>
 
-                <tr class="group"><td colspan="3">추가 비용 <span class="group-total">${totalCost.toFixed(2)}억</span></td></tr>
+                <tr class="group"><td colspan="3">추가 비용</td></tr>
                 <tr><td>중개수수료</td><td>${bro.toFixed(2)}</td><td>0.5%</td></tr>
                 <tr><td>취득세</td><td>${tax.toFixed(2)}</td><td>1.5%</td></tr>
                 <tr><td>기타</td><td>${etc.toFixed(1)}</td><td>등기 등</td></tr>
 
-                <tr class="group"><td colspan="3">받을 수 있는 대출 <span class="group-total">${totalLoan.toFixed(1)}억</span></td></tr>
+                <tr class="group"><td colspan="3">받을 수 있는 대출</td></tr>
                 <tr><td>잔금대출 (은행)</td><td>${finalLoan.toFixed(1)}</td><td>${reason}</td></tr>
                 ${midLoan > 0 ? `<tr><td>중도금대출 (건설사)</td><td>${midLoan.toFixed(1)}</td><td>${midRate}% 알선 (잔금 상환)</td></tr>` : ''}
+                <tr><td><strong>합계</strong></td><td><strong>${totalLoan.toFixed(1)}</strong></td><td></td></tr>
 
-                <tr class="group total"><td colspan="3">실제 내가 내야 할 돈 <span class="group-total">${outlay.toFixed(1)}억</span></td></tr>
+                <tr class="group total"><td>실제 내가 내야 할 돈</td><td>${outlay.toFixed(1)}</td><td>가격+비용-대출</td></tr>
                 <tr class="total"><td>잔여 자산</td><td class="highlight">${remain.toFixed(1)}</td><td>보유 ${assets.toFixed(1)}억에서 차감</td></tr>
             `;
 
@@ -215,14 +225,29 @@
                 ${ok ? '투자 가능!' : '아직 무리예요'} (${ok ? '잔여 ' + remain.toFixed(1) + '억' : Math.abs(remain).toFixed(1) + '억 부족'})
             </span>`;
 
-            const periods = 360;
-            const monthlyPrincipal = totalLoan / periods * 10000;
-            const avgMonthlyInterest = (totalLoan * (rate / 100) / 12) / 2 * 10000;
-            const avgMonthlyPayment = monthlyPrincipal + avgMonthlyInterest;
-            const totalInterest = avgMonthlyInterest * periods / 10000;
+            // 정확한 상환액 계산
+            const P = totalLoan * 100000000; // 원 단위
+            const r = rate / 100 / 12;
+            const n = 360;
 
-            document.getElementById('monthly-payment').innerHTML = `${Math.round(avgMonthlyPayment).toLocaleString()} 만원/월`;
-            document.getElementById('total-interest').innerHTML = `총 이자 약 ${totalInterest.toFixed(0)}억 원 (30년 기준)`;
+            // 원금 균등
+            const monthlyPrincipal = P / n;
+            const firstInterest = P * r;
+            const lastInterest = (P / n) * r;
+            const avgInterest = (firstInterest + lastInterest) / 2;
+            const avgMonthlyEqual = monthlyPrincipal + avgInterest;
+
+            // 원리금 균등
+            let monthlyLevel = 0;
+            if (r > 0) {
+                monthlyLevel = P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+            } else {
+                monthlyLevel = P / n;
+            }
+
+            document.getElementById('monthly-equal-principal').innerHTML = `${Math.round(avgMonthlyEqual / 10000).toLocaleString()} 만원`;
+            document.getElementById('monthly-level-payment').innerHTML = `${Math.round(monthlyLevel / 10000).toLocaleString()} 만원`;
+            document.getElementById('total-loan-display').innerHTML = totalLoan.toFixed(1);
 
             document.getElementById('result').style.display = 'block';
             window.scrollTo(0, document.getElementById('result').offsetTop - 20);
