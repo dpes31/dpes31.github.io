@@ -11,7 +11,7 @@
         .desc { text-align: center; font-size: 0.9rem; color: #6c757d; margin-bottom: 24px; }
         form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         label { display: block; font-size: 0.95rem; font-weight: 600; margin: 16px 0 6px; }
-        input, select { width: 100%; padding: 12px; font-size: 1rem; border: 1.5px solid #ced4da; border-radius: 8px; background: #fff; }
+        input, select { width: 100%; padding: 12px; font-size: 1rem; border: 1.5px solid #ced4da; border-radius: 8px; background: #fff; inputmode: decimal; }  /* 모바일 숫자 입력 최적화 */
         input:focus, select:focus { border-color: #007bff; outline: none; }
         input::placeholder { color: #adb5bd; }
         .underline { text-decoration: underline; text-decoration-color: #007bff; text-decoration-thickness: 2px; }
@@ -20,9 +20,10 @@
         button:active { background: #0056b3; }
         #result { margin-top: 32px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: none; }
         table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
-        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        th, td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #dee2e6; word-break: break-word; white-space: normal; }  /* 줄바꿈 최적화 */
         .group { background: #e7f3ff; font-weight: bold; font-size: 1rem; }
         .total { font-weight: bold; background: #fff9db; }
+        .final-loan { background: #fff9db; font-weight: bold; font-size: 1.1rem; color: #d9480f; }  /* 노란색 강조 */
         .highlight { font-size: 1.2rem; color: #007bff; font-weight: bold; }
         .possible { color: #28a745; font-weight: bold; }
         .impossible { color: #dc3545; font-weight: bold; }
@@ -153,7 +154,7 @@
         }
 
         document.querySelectorAll('input[type=number]').forEach(inp => {
-            inp.addEventListener('focus', function() { if(this.value === '' || this.value === this.placeholder) this.value = ''; });
+            inp.addEventListener('focus', function() { this.select(); });  /* 전체 선택으로 1자리부터 수정 가능 */
             inp.addEventListener('blur', function() { if(this.value === '') this.value = this.placeholder; });
         });
 
