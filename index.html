@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2025 부동산 투자 시뮬레이터</title>
+    <title>2025 부동산 투자 시뮬레이터 (11.10 최신)</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 16px; background: #f8f9fa; color: #212529; line-height: 1.5; }
@@ -14,7 +14,6 @@
         input, select { width: 100%; padding: 12px; font-size: 1rem; border: 1.5px solid #ced4da; border-radius: 8px; background: #fff; }
         input:focus, select:focus { border-color: #007bff; outline: none; }
         input::placeholder { color: #adb5bd; }
-        .underline { text-decoration: underline; text-decoration-color: #007bff; text-decoration-thickness: 2px; }
         .mid-loan { display: none; }
         .special-note { display: none; background: #e7f3ff; padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 0.9rem; }
         button { margin-top: 24px; width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; }
@@ -51,92 +50,76 @@
         .convertible { color: #dc3545; font-weight: bold; }
         .self-mid { color: #007bff; font-weight: bold; }
         .ltv-display { font-size: 1.2rem; font-weight: bold; color: #d9480f; margin: 12px 0; text-align: center; background: #fff; padding: 12px; border-radius: 8px; }
+        .cap-display { font-size: 1.1rem; font-weight: bold; color: #dc3545; margin: 12px 0; text-align: center; background: #fff; padding: 12px; border-radius: 8px; display: none; }
     </style>
 </head>
 <body>
     <h1>2025 부동산 투자 시뮬레이터</h1>
-    <p class="desc">규제지역만 선택 → LTV 자동 (2025.11.10 최신)</p>
-
+    <p class="desc">2025.11.10 금융위원회 FAQ 최신 적용</p>
     <form id="simulatorForm">
         <label>주택 유형</label>
-        <select id="type" onchange="toggleMidLoan(); updateLTV()">
+        <select id="type" onchange="toggleMidLoan(); updateRules()">
             <option value="buy">일반 매매</option>
             <option value="lottery">청약/분양</option>
         </select>
-
         <label>주택 가격 (억 원)</label>
-        <input type="number" id="price" placeholder="10" step="0.1" oninput="updateLTV(); showLotteryLimit()">
-
-        <div id="lottery-limit" style="display:none; background:#e7f3ff; padding:8px; border-radius:6px; font-size:0.9rem; margin:8px 0;"></div>
-
+        <input type="number" id="price" placeholder="10" step="0.1" oninput="updateRules(); showCap()">
         <label>투자 지역</label>
-        <select id="region" onchange="updateLTV()">
-            <option value="regulated">규제지역 (서울·수도권)</option>
-            <option value="non">비규제지역 (지방)</option>
+        <select id="region" onchange="updateRules()">
+            <option value="regulated">규제지역 (수도권 등)</option>
+            <option value="non">비규제지역</option>
         </select>
-
         <label>보유 주택 수</label>
-        <select id="houses" onchange="updateLTV()">
+        <select id="houses" onchange="updateRules()">
             <option value="0">무주택</option>
             <option value="1">1주택</option>
             <option value="multi">다주택</option>
         </select>
-
         <label>서민·실수요자 우대</label>
-        <select id="special" onchange="updateLTV()">
+        <select id="special" onchange="updateRules()">
             <option value="no">아니오</option>
-            <option value="yes">예</option>
+            <option value="yes">예 (무주택+소득1억이하+9억이하)</option>
         </select>
         <div id="special-note" class="special-note">
-            우대: 무주택 세대주, 소득 ~1억, 주택 9억 이하. 규제 70% / 비규제 80%
+            우대 적용 시 규제지역 LTV 70%, 비규제 80% (2025.10.16~ 미적용, 보수적 40/70% 유지)
         </div>
-
         <div class="ltv-display" id="ltv-display">LTV: 계산 중...</div>
-
+        <div class="cap-display" id="cap-display">고가한도: 적용 중...</div>
         <label>보유 자산 (억 원)</label>
         <input type="number" id="assets" placeholder="3" step="0.1">
-
         <label>연간 소득 (세전, 억 원)</label>
         <input type="number" id="income" placeholder="1" step="0.1">
-
         <div class="mid-loan">
             <label>건설사 중도금 대출 비율 (%)</label>
             <input type="number" id="midLoanRate" placeholder="40" step="5" min="0" max="60">
         </div>
-
         <label>대출 금리 (%)</label>
-        <input type="number" id="interestRate" placeholder="3.3" step="0.1">
-
+        <input type="number" id="interestRate" placeholder="4.0" step="0.1">
         <button type="button" onclick="calculate()">계산하기</button>
     </form>
-
     <div id="result">
         <h2 style="margin-top:0; font-size:1.3rem; text-align:center;">투자 분석 결과</h2>
-
         <div class="section">
             <h3>1. 대출 한도 및 최대 대출금</h3>
             <div class="final-loan" id="final-loan-detail"></div>
             <div id="loan-breakdown"></div>
-            <table id="limit-table">
-                <tr><th>분양가 범위</th><th>대출 한도</th></tr>
+            <table id="cap-table" style="display:none;">
+                <tr><th>주택가격</th><th>최대 한도</th></tr>
                 <tr><td>15억 이하</td><td>6억</td></tr>
                 <tr><td>15~25억</td><td>4억</td></tr>
                 <tr><td>25억 초과</td><td>2억</td></tr>
             </table>
         </div>
-
         <div class="section">
-            <h3>2. 청약 개요 및 나갈 돈</h3>
+            <h3 id="outlay-title">2. 매매 개요 및 나갈 돈</h3>
             <div id="outlay-items"></div>
-            <p class="small-note">양도세·복비 미반영</p>
+            <p class="small-note">취득세 1.5% + 기타 0.1억 (양도세·복비 미반영)</p>
         </div>
-
         <div class="section summary">
             <h3>총 정리</h3>
             <div id="total-summary"></div>
             <p id="feasibility" style="text-align:center; margin:20px 0 0;"></p>
         </div>
-
         <div id="interest-section">
             <h3><span id="total-loan-display"></span>억 대출 월 상환 (30년)</h3>
             <div class="repay-box">
@@ -152,145 +135,193 @@
                 </div>
             </div>
         </div>
-
         <div class="tip-box">
-            <strong>2025 규제</strong><br>
-            • 규제지역 기본 40% (우대 70%)<br>
-            • 비규제 기본 70% (우대 80%)<br>
-            • 다주택 0%
+            <strong>2025.10.16 규제 (금융위원회 FAQ)</strong><br>
+            • 규제지역 LTV 40% (다주택 0%, 중도금/이주비 제외)<br>
+            • 수도권·규제지역 고가한도: 15억이하 6억, 15-25억 4억, 25억초과 2억<br>
+            • 스트레스 DSR 금리 3.0% (비규제 제외)<br>
+            • 생활안정자금 주담대 제외
         </div>
     </div>
-
     <script>
         const reg = {
-            dsrMultiplier: 5.625,
-            lotteryLimit: { low: 6, high15: 4, high25: 2 },
+            dsrRate: 0.4,
+            stressRateReg: 0.03,  // 규제 3.0%
+            stressRateNon: 0,     // 비규제 0% (보수적)
             costs: { tax: 0.015, etc: 0.1 },
-            defaultRate: 3.3
+            defaultRate: 4.0,
+            term: 30
         };
-
         let currentLTV = 0;
-
+        let currentLTVRate = '';
+        let priceCap = 999;
+        let isRegulatedCap = false;
         function toggleMidLoan() {
             const isLottery = document.getElementById('type').value === 'lottery';
             document.querySelector('.mid-loan').style.display = isLottery ? 'block' : 'none';
-            document.getElementById('lottery-limit').style.display = 'none';
-            if (isLottery) showLotteryLimit();
+            document.getElementById('cap-table').style.display = 'none';
+            updateRules();
         }
-
-        function showLotteryLimit() {
+        function showCap() {
             const price = parseFloat(document.getElementById('price').value) || 0;
-            let cap = reg.lotteryLimit.low;
-            if (price > 25) cap = reg.lotteryLimit.high25;
-            else if (price > 15) cap = reg.lotteryLimit.high15;
-            document.getElementById('lottery-limit').innerHTML = `청약 대출 한도: ${cap}억 원`;
-            document.getElementById('lottery-limit').style.display = 'block';
+            const region = document.getElementById('region').value;
+            if (region === 'regulated' && price > 15) {
+                let cap = price > 25 ? 2 : 4;
+                if (price <= 15) cap = 6;
+                document.getElementById('cap-display').innerHTML = `고가한도 적용: 최대 ${cap}억`;
+                document.getElementById('cap-display').style.display = 'block';
+            } else {
+                document.getElementById('cap-display').style.display = 'none';
+            }
         }
-
-        function updateLTV() {
+        function updateRules() {
             const region = document.getElementById('region').value;
             const houses = document.getElementById('houses').value;
             const special = document.getElementById('special').value;
             const price = parseFloat(document.getElementById('price').value) || 0;
-
+            const type = document.getElementById('type').value;
             document.getElementById('special-note').style.display = special === 'yes' ? 'block' : 'none';
-
             if (houses === 'multi') {
                 currentLTV = 0;
+                currentLTVRate = '다주택 0%';
                 document.getElementById('ltv-display').innerHTML = '다주택: LTV 0% (대출 불가)';
                 return;
             }
-
-            const base = region === 'regulated' ? 0.4 : 0.7;
-            currentLTV = special === 'yes' ? (region === 'regulated' ? 0.7 : 0.8) : base;
-
-            document.getElementById('ltv-display').innerHTML = `LTV ${currentLTV * 100}% → 최대 ${ (price * currentLTV).toFixed(1) }억`;
+            let base = region === 'regulated' ? 0.4 : 0.7;
+            let rateStr = region === 'regulated' ? '40%' : '70%';
+            currentLTV = base;
+            currentLTVRate = rateStr;
+            document.getElementById('ltv-display').innerHTML = `LTV ${rateStr} → 최대 ${(price * currentLTV).toFixed(1)}억`;
+            // 고가 한도 (규제지역 + 매매/청약 공통)
+            isRegulatedCap = (region === 'regulated');
+            if (isRegulatedCap) {
+                priceCap = price > 25 ? 2 : (price > 15 ? 4 : 6);
+                document.getElementById('cap-table').style.display = 'table';
+                showCap();
+            } else {
+                priceCap = 999;
+                document.getElementById('cap-table').style.display = 'none';
+            }
+            document.getElementById('outlay-title').innerHTML = type === 'lottery' ? '2. 청약 개요 및 나갈 돈' : '2. 매매 개요 및 나갈 돈';
         }
-
+        function calculateDSRMaxPrincipal(annualIncome, annualRate, stress) {
+            if (annualIncome <= 0) return 0;
+            const stressAdj = annualRate / 100 + stress;
+            const monthlyIncome = annualIncome * 100000000 / 12;
+            const monthlyRate = stressAdj / 12;
+            const months = reg.term * 12;
+            const dsrMonthly = monthlyIncome * reg.dsrRate;
+            if (monthlyRate <= 0) return (dsrMonthly * months) / 100000000;
+            const pow = Math.pow(1 + monthlyRate, months);
+            const maxP = dsrMonthly * (pow - 1) / (monthlyRate * pow);
+            return maxP / 100000000; // 억
+        }
         function calculate() {
             const type = document.getElementById('type').value;
             const price = parseFloat(document.getElementById('price').value) || 0;
             const assets = parseFloat(document.getElementById('assets').value) || 0;
             const income = parseFloat(document.getElementById('income').value) || 0;
-            const midRate = type === 'lottery' ? parseFloat(document.getElementById('midLoanRate').value) || 40 : 0;
             const rate = parseFloat(document.getElementById('interestRate').value) || reg.defaultRate;
-
+            const region = document.getElementById('region').value;
+            const midRate = type === 'lottery' ? parseFloat(document.getElementById('midLoanRate').value) || 40 : 0;
             const ltvAmt = price * currentLTV;
-            const dsrAmt = income * reg.dsrMultiplier;
-
-            let cap = reg.lotteryLimit.low;
-            if (price > 25) cap = reg.lotteryLimit.high25;
-            else if (price > 15) cap = reg.lotteryLimit.high15;
-
-            let finalLoan = type === 'buy' ? Math.min(ltvAmt, dsrAmt) : Math.min(ltvAmt, dsrAmt, cap);
-            const minSource = finalLoan === ltvAmt ? 'LTV' : finalLoan === dsrAmt ? 'DSR' : '분양가 한도';
-
-            const midTotal = type === 'lottery' ? price * 0.6 : 0;
-            const midLoanPossible = price * (midRate / 100);
-            const midExcess = midLoanPossible > finalLoan ? midLoanPossible - finalLoan : 0;
-            const midConvertible = midLoanPossible - midExcess;
-            const selfMid = midTotal - midConvertible;
-
+            const stress = (region === 'regulated') ? reg.stressRateReg : reg.stressRateNon;
+            const dsrAmt = calculateDSRMaxPrincipal(income, rate, stress);
+            let finalLoan = Math.min(ltvAmt, dsrAmt);
+            if (isRegulatedCap) finalLoan = Math.min(finalLoan, priceCap);
+            let minSource = finalLoan === ltvAmt ? `LTV (${currentLTVRate})` : finalLoan === dsrAmt ? 'DSR (40%+스트레스3%)' : '고가한도';
             const tax = price * reg.costs.tax;
             const etc = reg.costs.etc;
             const totalCost = tax + etc;
+            let totalOutlay, outlayHtml, breakdownHtml;
+            
+            // 공통 주석 (최대 대출금 제외 기준)을 위한 변수
+            const loanExclusionNote = `<div class="sub-item small-note" style="padding-left:0; text-align:right;">(최대 대출금 ${finalLoan.toFixed(1)}억 제외 기준)</div>`;
+            
+            if (type === 'buy') {
+                const cashOutlay = price - finalLoan + totalCost; // 총 필요 현금 = (주택가격 - 대출) + 비용
+                totalOutlay = cashOutlay;
 
-            const contract = price * 0.1;
-            const balance = price * 0.3;
+                outlayHtml = `<div class="item"><strong>주택가격</strong> <span class="amount">${price.toFixed(1)}억</span></div>
+                    <div class="item"><strong>총 나갈 돈 (현금 필요액)</strong> <span class="big-amount">${cashOutlay.toFixed(2)}억</span></div>
+                    ${loanExclusionNote}
+                    <div class="item"><strong>├ 대출 제외 잔금</strong> <span class="amount">${(price - finalLoan).toFixed(2)}억</span></div>
+                    <div class="item"><strong>├ 취득세 등</strong> <span class="amount">${tax.toFixed(2)}억</span></div>
+                    <div class="item"><strong>└ 기타 비용</strong> <span class="amount">${etc.toFixed(1)}억</span></div>`;
+                
+                breakdownHtml = `<div class="item"><strong>LTV (${currentLTVRate})</strong> <span class="amount">${ltvAmt.toFixed(1)}억</span></div>
+                    <div class="item"><strong>DSR (40%+스트레스)</strong> <span class="amount">${dsrAmt.toFixed(1)}억</span></div>`;
+                if (isRegulatedCap) breakdownHtml += `<div class="item"><strong>고가한도</strong> <span class="amount">${priceCap}억</span></div>`;
 
-            const totalOutlay = contract + selfMid + balance + totalCost;
-            const remain = assets - totalOutlay;
-            const ok = remain >= 0;
-
-            document.getElementById('final-loan-detail').innerHTML = `
-                <div class="big-amount">${finalLoan.toFixed(1)}억</div>
-                <p>${minSource} 기준</p>
-            `;
-            document.getElementById('loan-breakdown').innerHTML = `
-                <div class="item"><strong>건설사 알선 (${midRate}%)</strong> <span class="amount">${midLoanPossible.toFixed(1)}억</span></div>
-                <div class="item"><strong>분양가 한도</strong> <span class="amount">${cap.toFixed(1)}억</span></div>
-                <div class="item"><strong>LTV (${currentLTV*100}%)</strong> <span class="amount">${ltvAmt.toFixed(1)}억</span></div>
-                <div class="item"><strong>DSR</strong> <span class="amount">${dsrAmt.toFixed(1)}억</span></div>
-            `;
-
-            let outlayHtml = `<div class="item"><strong>분양가</strong> <span class="amount">${price.toFixed(1)}억</span></div>
-                <div class="item"><strong>총 나갈 돈</strong> <span class="big-amount">${totalOutlay.toFixed(1)}억</span></div>
-                <div class="item"><strong>├ 계약금 10%</strong> <span class="amount">${contract.toFixed(1)}억</span></div>`;
-            if (type === 'lottery') {
-                outlayHtml += `<div class="item"><strong>├ 중도금 60%</strong> <span class="amount">${midTotal.toFixed(1)}억</span></div>
+            } else {
+                const midTotal = price * 0.6;
+                const midLoanPossible = price * (midRate / 100);
+                const midExcess = midLoanPossible > finalLoan ? midLoanPossible - finalLoan : 0;
+                const midConvertible = midLoanPossible - midExcess;
+                const selfMid = midTotal - midConvertible;
+                const contract = price * 0.1;
+                const balance = price * 0.3;
+                totalOutlay = contract + selfMid + balance + totalCost; // 기존 청약 로직 유지: 총 현금 필요액 (자납)
+                outlayHtml = `<div class="item"><strong>분양가</strong> <span class="amount">${price.toFixed(1)}억</span></div>
+                    <div class="item"><strong>총 나갈 돈 (현금 필요액)</strong> <span class="big-amount">${totalOutlay.toFixed(1)}억</span></div>
+                    ${loanExclusionNote}
+                    <div class="item"><strong>├ 계약금 10%</strong> <span class="amount">${contract.toFixed(1)}억</span></div>
+                    <div class="item"><strong>├ 중도금 60%</strong> <span class="amount">${midTotal.toFixed(1)}억</span></div>
                     <div class="sub-item"><strong>│ ├ 전환 대출</strong> <span class="convertible">${midConvertible.toFixed(1)}억</span></div>
                     <div class="sub-item"><strong>│ └ 자납</strong> <span class="self-mid">${selfMid.toFixed(1)}억</span></div>
-                    <div class="item"><strong>├ 잔금 30%</strong> <span class="amount">${balance.toFixed(1)}억</span></div>`;
+                    <div class="item"><strong>├ 잔금 30%</strong> <span class="amount">${balance.toFixed(1)}억</span></div>
+                    <div class="item"><strong>├ 추가 비용</strong> <span class="amount">${totalCost.toFixed(2)}억</span></div>`;
+                breakdownHtml = `<div class="item"><strong>건설사 알선 (${midRate}%)</strong> <span class="amount">${midLoanPossible.toFixed(1)}억</span></div>
+                    <div class="item"><strong>LTV (${currentLTVRate})</strong> <span class="amount">${ltvAmt.toFixed(1)}억</span></div>
+                    <div class="item"><strong>DSR (40%+스트레스)</strong> <span class="amount">${dsrAmt.toFixed(1)}억</span></div>`;
+                if (isRegulatedCap) breakdownHtml += `<div class="item"><strong>고가한도</strong> <span class="amount">${priceCap}억</span></div>`;
             }
-            outlayHtml += `<div class="item"><strong>├ 추가 비용</strong> <span class="amount">${totalCost.toFixed(2)}억</span></div>`;
+            
+            // 총 자금 (Total Funding) 계산
+            const totalFunding = assets + finalLoan;
+
+            // 현금 잔여/부족분 계산 (기존 remain 변수 재사용)
+            const remain = totalFunding - (price + totalCost);
+            
+            const ok = remain >= 0;
+            
+            document.getElementById('final-loan-detail').innerHTML = `<div class="big-amount">${finalLoan.toFixed(1)}억</div><p>${minSource} 기준</p>`;
+            document.getElementById('loan-breakdown').innerHTML = breakdownHtml;
             document.getElementById('outlay-items').innerHTML = outlayHtml;
-
+            
+            // ***** 총 정리(total-summary) 부분 *****
             document.getElementById('total-summary').innerHTML = `
-                <div class="item"><strong>가격</strong> <span class="amount">${price.toFixed(1)}억</span></div>
-                <div class="item"><strong>나갈 돈</strong> <span class="amount">${totalOutlay.toFixed(1)}억</span></div>
-                <div class="item"><strong>대출</strong> <span class="amount">${finalLoan.toFixed(1)}억</span></div>
-                <div class="item"><strong>자산</strong> <span class="amount">${assets.toFixed(1)}억</span></div>
-                <div class="item" style="border-top:3px double #ced4da;"><strong>잔여</strong> <span class="highlight">${remain.toFixed(1)}억</span></div>
+                <div class="item"><strong>A. 총 비용 (주택가 + 부대비용)</strong> <span class="big-amount">${(price + totalCost).toFixed(2)}억</span></div>
+                <div class="item"><strong>B. 확보된 자금 (자산 + 대출)</strong> <span class="big-amount" style="color:#007bff;">${totalFunding.toFixed(2)}억</span></div>
+                <div class="item sub-item" style="border-bottom: none;">└ 보유 자산 (현금) <span class="amount">${assets.toFixed(1)}억</span></div>
+                <div class="item sub-item">└ 최대 대출금 <span class="amount">${finalLoan.toFixed(1)}억</span></div>
+                <div class="item" style="border-top:3px double #ced4da;">
+                    <strong>C. 최종 잔여 현금 (B - A)</strong> 
+                    <span class="highlight">${remain.toFixed(2)}억</span>
+                </div>
             `;
+            // *************************************************
 
-            const remainText = remain >= 0 ? `${remain.toFixed(1)}억 여유` : `${Math.abs(remain).toFixed(1)}억 부족`;
+            const remainText = remain >= 0 ? `${remain.toFixed(2)}억 여유` : `${Math.abs(remain).toFixed(2)}억 부족`;
             document.getElementById('feasibility').innerHTML = `<span class="${ok ? 'possible' : 'impossible'}">${ok ? '가능' : '불가'} (${remainText})</span>`;
-
+            
             const P = finalLoan * 100000000;
             const r = rate / 100 / 12;
-            const n = 360;
-            const avgEqual = P / n + (P * r + P / n * r) / 2;
+            const n = reg.term * 12;
             const level = r > 0 ? P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1) : P / n;
-
+            const principalMonthly = P / n;
+            const interestFirst = P * r;
+            const interestLast = principalMonthly * r;
+            const avgEqual = principalMonthly + (interestFirst + interestLast) / 2;
+            
             document.getElementById('monthly-equal-principal').innerHTML = `${Math.round(avgEqual / 10000).toLocaleString()}만원`;
             document.getElementById('monthly-level-payment').innerHTML = `${Math.round(level / 10000).toLocaleString()}만원`;
             document.getElementById('total-loan-display').innerHTML = finalLoan.toFixed(1);
-
+            
             document.getElementById('result').style.display = 'block';
             window.scrollTo({ top: document.getElementById('result').offsetTop - 20, behavior: 'smooth' });
         }
-
-        updateLTV();
+        updateRules();
         toggleMidLoan();
     </script>
 </body>
