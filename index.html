@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2025 부동산 투자 시뮬레이터 (11.10 최신)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 16px; background: #f8f9fa; color: #212529; line-height: 1.5; }
@@ -16,8 +17,31 @@
         input::placeholder { color: #adb5bd; }
         .mid-loan { display: none; }
         .special-note { display: none; background: #e7f3ff; padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 0.9rem; }
-        button { margin-top: 24px; width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; }
-        button:active { background: #0056b3; }
+        /* 버튼 스타일 수정: 영역 및 폰트 강조 */
+        button { 
+            margin-top: 24px; 
+            width: 100%; 
+            padding: 16px; 
+            background: linear-gradient(135deg, #007bff, #0056b3); /* 그라데이션 추가 */
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1.2rem; /* 영역 확장 */
+            font-weight: 800; /* 굵게 */
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4); /* 그림자 추가 */
+            transition: all 0.2s ease-in-out;
+        }
+        button:hover { 
+            background: linear-gradient(135deg, #0056b3, #007bff); 
+            box-shadow: 0 6px 15px rgba(0, 123, 255, 0.6);
+            transform: translateY(-1px);
+        }
+        button:active { 
+            background: #0056b3; 
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
         #result { margin-top: 32px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: none; }
         .section { margin-bottom: 32px; padding: 20px; background: #f8f9fa; border-radius: 12px; border: 1px solid #dee2e6; }
         .section h3 { margin: 0 0 16px; font-size: 1.2rem; color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 8px; }
@@ -28,30 +52,37 @@
             padding: 10px 0; 
             border-bottom: 1px dashed #ced4da; 
             font-size: 1rem;
-            /* 라벨 부분은 줄바꿈 허용 (기본값) */
-            flex-wrap: wrap; /* 좁은 화면에서 전체 항목이 줄바꿈될 수 있도록 허용 */
+            flex-wrap: wrap;
         }
         .item strong { 
             color: #212529; 
-            /* 라벨이 줄바꿈될 공간을 확보 */
             flex-basis: auto; 
-            max-width: 70%; /* 라벨 최대 너비 설정 */
-            word-break: break-word; /* 긴 텍스트 강제 줄바꿈 */
+            max-width: 70%;
+            word-break: break-word;
         }
         .item:last-child { border-bottom: none; }
-        /* 금액 부분 - 숫자와 '억' 단위가 떨어지지 않도록 설정 */
         .amount { 
             font-weight: bold; 
             color: #007bff; 
-            white-space: nowrap; /* 줄바꿈 방지 */
-            margin-left: auto; /* 금액을 항상 오른쪽으로 밀어냄 */
+            white-space: nowrap; 
+            margin-left: auto;
         }
         .big-amount { 
-            font-size: 1.8rem; 
             font-weight: bold; 
             color: #d9480f; 
-            white-space: nowrap; /* 줄바꿈 방지 */
-            margin-left: auto; /* 금액을 항상 오른쪽으로 밀어냄 */
+            white-space: nowrap;
+            margin-left: auto;
+        }
+        .total-outlay { font-size: 1.8rem; }
+        /* 대출 금액 음영 스타일 */
+        .loan-bg {
+            background-color: #e6f7ff; /* 연한 하늘색 음영 */
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        /* 중도금 대출 금액 파란색으로 표기 (요청 사항 반영) */
+        .mid-loan-amount {
+            color: #007bff !important;
         }
         /* 기존 스타일 유지 */
         .final-loan { background: #ffe5e5; border: 3px solid #dc3545; padding: 16px; border-radius: 12px; text-align: center; }
@@ -85,7 +116,7 @@
             font-size: 0.85rem; 
             color: #6c757d; 
             text-align: right; 
-            padding: 4px 0 10px; /* 위치 조정 */
+            padding: 4px 0 10px;
             line-height: 1.3;
         }
         .policy-btn {
@@ -98,6 +129,25 @@
             border-radius: 6px; 
             font-weight: 600;
             font-size: 0.9rem;
+        }
+        #loan-flow-content h4 {
+            font-size: 1.1rem;
+            color: #007bff;
+            border-bottom: 1px solid #007bff;
+            padding-bottom: 4px;
+            margin-top: 20px;
+            margin-bottom: 12px;
+        }
+        .loan-flow-item strong {
+            font-size: 1rem;
+        }
+        .note-red {
+            color: #dc3545; 
+            font-size: 0.9rem; 
+            font-weight: bold;
+            padding-left: 20px;
+            margin-top: 4px;
+            display: block;
         }
     </style>
 </head>
@@ -149,9 +199,11 @@
     </form>
     <div id="result">
         <h2 style="margin-top:0; font-size:1.3rem; text-align:center;">투자 분석 결과</h2>
-        <div class="section">
+        
+        <!-- 대출 한도 섹션 (1) -->
+        <div class="section" id="section-loan-limit">
             <h3>1. 대출 한도 및 최대 대출금</h3>
-            <div class="final-loan" id="final-loan-detail"></div>
+            <div id="final-loan-detail"></div>
             <div id="loan-breakdown"></div>
             <table id="cap-table" style="display:none;">
                 <tr><th>주택가격</th><th>최대 한도</th></tr>
@@ -160,16 +212,29 @@
                 <tr><td>25억 초과</td><td>2억</td></tr>
             </table>
         </div>
-        <div class="section">
-            <h3 id="outlay-title">2. 매매 개요 및 나갈 돈</h3>
+        
+        <!-- 매매/청약 개요 및 현금 필요액 섹션 (2) - 청약 시 숨김 -->
+        <div class="section" id="section-outlay">
+            <h3 id="outlay-title">2. 매매 개요 및 총 현금 필요액</h3>
             <div id="outlay-items"></div>
-            <p class="small-note">취득세 1.5% + 기타 0.1억 (양도세·복비 미반영)</p>
+            <!-- 비용 기준 수정 -->
+            <p class="small-note">취득세 3.3% + 중개 보수료 0.6% + 기타 0.1억 (실제 금액과 다를 수 있습니다)</p>
         </div>
-        <div class="section summary">
-            <h3>총 정리</h3>
+
+        <!-- 대출 단계별 현금 흐름 섹션 (청약 전용) (3 -> 2로 변경) -->
+        <div class="section" id="loan-flow-section" style="display:none;">
+            <h3>2. 현금 흐름 상세 분석 (청약)</h3>
+            <div id="loan-flow-content"></div>
+        </div>
+
+        <!-- 총 정리 섹션 (4 -> 3으로 변경) -->
+        <div class="section summary" id="section-summary">
+            <h3>3. 총 정리</h3>
             <div id="total-summary"></div>
-            <p id="feasibility" style="text-align:center; margin:20px 0 0;"></p>
+            <p id="feasibility" style="text-align:center; margin:20px 0 0 0;"></p>
         </div>
+        
+        <!-- 이자 상환 섹션 -->
         <div id="interest-section">
             <h3><span id="total-loan-display"></span>억 대출 월 상환 (30년)</h3>
             <div class="repay-box">
@@ -202,7 +267,11 @@
             dsrRate: 0.4,
             stressRateReg: 0.03,  // 규제 3.0%
             stressRateNon: 0,     // 비규제 0% (보수적)
-            costs: { tax: 0.015, etc: 0.1 },
+            costs: { 
+                taxRate: 0.033,       // 취득세 3.3% (사용자 요청)
+                brokerageRate: 0.006, // 중개 보수료 0.6% (사용자 요청)
+                etc: 0.1              // 기타 비용 (고정)
+            },
             defaultRate: 4.0,
             term: 30
         };
@@ -210,12 +279,14 @@
         let currentLTVRate = '';
         let priceCap = 999;
         let isRegulatedCap = false;
+
         function toggleMidLoan() {
             const isLottery = document.getElementById('type').value === 'lottery';
             document.querySelector('.mid-loan').style.display = isLottery ? 'block' : 'none';
             document.getElementById('cap-table').style.display = 'none';
             updateRules();
         }
+
         function showCap() {
             const price = parseFloat(document.getElementById('price').value) || 0;
             const region = document.getElementById('region').value;
@@ -228,25 +299,29 @@
                 document.getElementById('cap-display').style.display = 'none';
             }
         }
+
         function updateRules() {
             const region = document.getElementById('region').value;
             const houses = document.getElementById('houses').value;
             const special = document.getElementById('special').value;
             const price = parseFloat(document.getElementById('price').value) || 0;
             const type = document.getElementById('type').value;
+            
             document.getElementById('special-note').style.display = special === 'yes' ? 'block' : 'none';
+
             if (houses === 'multi') {
                 currentLTV = 0;
                 currentLTVRate = '다주택 0%';
                 document.getElementById('ltv-display').innerHTML = '다주택: LTV 0% (대출 불가)';
                 return;
             }
+
             let base = region === 'regulated' ? 0.4 : 0.7;
             let rateStr = region === 'regulated' ? '40%' : '70%';
             currentLTV = base;
             currentLTVRate = rateStr;
             document.getElementById('ltv-display').innerHTML = `LTV ${rateStr} → 최대 ${(price * currentLTV).toFixed(1)}억`;
-            // 고가 한도 (규제지역 + 매매/청약 공통)
+
             isRegulatedCap = (region === 'regulated');
             if (isRegulatedCap) {
                 priceCap = price > 25 ? 2 : (price > 15 ? 4 : 6);
@@ -256,8 +331,23 @@
                 priceCap = 999;
                 document.getElementById('cap-table').style.display = 'none';
             }
-            document.getElementById('outlay-title').innerHTML = type === 'lottery' ? '2. 청약 개요 및 나갈 돈' : '2. 매매 개요 및 나갈 돈';
+
+            // 섹션 번호 조정 및 가시성 관리
+            if (type === 'lottery') {
+                document.getElementById('section-outlay').style.display = 'none';
+                document.getElementById('section-loan-limit').querySelector('h3').textContent = '1. 대출 한도 및 최대 대출금';
+                document.getElementById('loan-flow-section').style.display = 'block';
+                document.getElementById('loan-flow-section').querySelector('h3').textContent = '2. 현금 흐름 상세 분석 (청약)';
+                document.getElementById('section-summary').querySelector('h3').textContent = '3. 총 정리';
+            } else {
+                document.getElementById('section-outlay').style.display = 'block';
+                document.getElementById('section-loan-limit').querySelector('h3').textContent = '1. 대출 한도 및 최대 대출금';
+                document.getElementById('section-outlay').querySelector('h3').textContent = '2. 매매 개요 및 총 현금 필요액';
+                document.getElementById('loan-flow-section').style.display = 'none';
+                document.getElementById('section-summary').querySelector('h3').textContent = '3. 총 정리';
+            }
         }
+
         function calculateDSRMaxPrincipal(annualIncome, annualRate, stress) {
             if (annualIncome <= 0) return 0;
             const stressAdj = annualRate / 100 + stress;
@@ -265,11 +355,14 @@
             const monthlyRate = stressAdj / 12;
             const months = reg.term * 12;
             const dsrMonthly = monthlyIncome * reg.dsrRate;
+
             if (monthlyRate <= 0) return (dsrMonthly * months) / 100000000;
+            
             const pow = Math.pow(1 + monthlyRate, months);
             const maxP = dsrMonthly * (pow - 1) / (monthlyRate * pow);
             return maxP / 100000000; // 억
         }
+
         function calculate() {
             const type = document.getElementById('type').value;
             const price = parseFloat(document.getElementById('price').value) || 0;
@@ -278,56 +371,171 @@
             const rate = parseFloat(document.getElementById('interestRate').value) || reg.defaultRate;
             const region = document.getElementById('region').value;
             const midRate = type === 'lottery' ? parseFloat(document.getElementById('midLoanRate').value) || 40 : 0;
+            
+            // 1. 최대 잔금 대출금 (LTV/DSR/Cap 중 최소값) 계산
             const ltvAmt = price * currentLTV;
             const stress = (region === 'regulated') ? reg.stressRateReg : reg.stressRateNon;
             const dsrAmt = calculateDSRMaxPrincipal(income, rate, stress);
             let finalLoan = Math.min(ltvAmt, dsrAmt);
             if (isRegulatedCap) finalLoan = Math.min(finalLoan, priceCap);
             let minSource = finalLoan === ltvAmt ? `LTV (${currentLTVRate})` : finalLoan === dsrAmt ? 'DSR (40%+스트레스3%)' : '고가한도';
-            const tax = price * reg.costs.tax;
+
+            // 2. 비용 계산 (수정된 3.3% 취득세 + 0.6% 중개 보수료 반영)
+            const tax = price * reg.costs.taxRate;
+            const brokerage = price * reg.costs.brokerageRate;
             const etc = reg.costs.etc;
-            const totalCost = tax + etc;
-            let totalOutlay, outlayHtml, breakdownHtml;
+            const totalCost = tax + brokerage + etc;
             
-            const loanExclusionNote = `<div class="loan-note">(최대 대출금 ${finalLoan.toFixed(1)}억 제외 기준)</div>`;
+            let totalOutlay;
             
+            // 청약 전용 섹션 초기화
+            document.getElementById('loan-flow-content').innerHTML = '';
+
+
+            // --- Section 1 Content Generation: 대출 한도 및 최대 대출금 ---
+            let loanDetailHtml = '';
+            let loanBreakdownHtml = '';
+            
+            const midLoanPossible = type === 'lottery' ? price * (midRate / 100) : 0; // 중도금 실행 가능액
+            
+            if (type === 'lottery') {
+                // 1. 중도금 대출 실행금 (요청사항 1 반영)
+                loanDetailHtml += `<h4 style="margin: 0 0 8px; color: #495057;">중도금 대출 실행금</h4>`;
+                loanDetailHtml += `
+                    <div class="final-loan" style="border: 3px solid #dc3545; background: #fff5f5; padding: 12px; margin-top: 10px; margin-bottom: 20px; text-align: center;">
+                        <div class="big-amount loan-bg" style="font-size: 1.8rem; color: #dc3545; display: inline-block; background: transparent !important;">
+                            ${midLoanPossible.toFixed(1)}억
+                        </div>
+                        <p class="small-note" style="text-align: center; margin: 5px 0 0;">(중도금 ${midRate}% 실행 기준)</p>
+                    </div>
+                `;
+            }
+
+            // 1. 잔금 대출 최대 실행금
+            loanDetailHtml += `
+                <h4 style="margin: 0 0 8px; color: #495057;">잔금 대출 최대 실행금</h4>
+                <div class="final-loan" style="border: 3px solid #007bff; background: #e7f3ff; padding: 12px; margin-top: 10px; text-align: center;">
+                    <div class="big-amount loan-bg" style="font-size: 1.8rem; color: #007bff; display: inline-block;">
+                        ${finalLoan.toFixed(1)}억
+                    </div>
+                    <p class="small-note" style="text-align: center; margin: 5px 0 0;">(${minSource} 기준)</p>
+                </div>
+            `;
+
+            loanBreakdownHtml = `<div style="margin-top: 16px;">
+                <div class="item"><strong>LTV (${currentLTVRate})</strong> <span class="amount">${ltvAmt.toFixed(1)}억</span></div>
+                <div class="item"><strong>DSR (40%+스트레스)</strong> <span class="amount">${dsrAmt.toFixed(1)}억</span></div>`;
+            if (isRegulatedCap) loanBreakdownHtml += `<div class="item"><strong>고가한도</strong> <span class="amount">${priceCap}억</span></div>`;
+            loanBreakdownHtml += '</div>';
+
+            document.getElementById('final-loan-detail').innerHTML = loanDetailHtml;
+            document.getElementById('loan-breakdown').innerHTML = loanBreakdownHtml;
+            
+            // --- Section 2 Content Generation: 현금 필요액 ---
+
             if (type === 'buy') {
+                // 일반 매매 (기존 로직 유지)
                 const cashOutlay = price - finalLoan + totalCost; // 총 필요 현금 = (주택가격 - 대출) + 비용
                 totalOutlay = cashOutlay;
 
                 outlayHtml = `<div class="item"><strong>주택가격</strong> <span class="amount">${price.toFixed(1)}억</span></div>
-                    <div class="item"><strong>총 나갈 돈 (현금 필요액)</strong> <span class="big-amount">${cashOutlay.toFixed(2)}억</span></div>
-                    ${loanExclusionNote}
+                    <div class="item"><strong>총 나갈 돈 (현금 필요액)</strong> <span class="big-amount total-outlay">${cashOutlay.toFixed(2)}억</span></div>
+                    <div class="loan-note">(총 현금 필요액 = 주택가격 + 부대비용 - 최대 잔금 대출금)</div>
                     <div class="item" style="border-top: 1px dashed #ced4da;"><strong>├ 대출 제외 잔금</strong> <span class="amount">${(price - finalLoan).toFixed(2)}억</span></div>
-                    <div class="item"><strong>├ 취득세 등</strong> <span class="amount">${tax.toFixed(2)}억</span></div>
+                    <div class="item"><strong>├ 취득세 (3.3%)</strong> <span class="amount">${tax.toFixed(2)}억</span></div>
+                    <div class="item"><strong>├ 중개 보수료 (0.6%)</strong> <span class="amount">${brokerage.toFixed(2)}억</span></div>
                     <div class="item"><strong>└ 기타 비용</strong> <span class="amount">${etc.toFixed(1)}억</span></div>`;
+                document.getElementById('outlay-items').innerHTML = outlayHtml;
                 
-                breakdownHtml = `<div class="item"><strong>LTV (${currentLTVRate})</strong> <span class="amount">${ltvAmt.toFixed(1)}억</span></div>
-                    <div class="item"><strong>DSR (40%+스트레스)</strong> <span class="amount">${dsrAmt.toFixed(1)}억</span></div>`;
-                if (isRegulatedCap) breakdownHtml += `<div class="item"><strong>고가한도</strong> <span class="amount">${priceCap}억</span></div>`;
-
             } else {
-                const midTotal = price * 0.6;
-                const midLoanPossible = price * (midRate / 100);
-                const midExcess = midLoanPossible > finalLoan ? midLoanPossible - finalLoan : 0;
-                const midConvertible = midLoanPossible - midExcess;
-                const selfMid = midTotal - midConvertible;
-                const contract = price * 0.1;
-                const balance = price * 0.3;
-                totalOutlay = contract + selfMid + balance + totalCost; // 기존 청약 로직 유지: 총 현금 필요액 (자납)
-                outlayHtml = `<div class="item"><strong>분양가</strong> <span class="amount">${price.toFixed(1)}억</span></div>
-                    <div class="item"><strong>총 나갈 돈 (현금 필요액)</strong> <span class="big-amount">${totalOutlay.toFixed(1)}억</span></div>
-                    ${loanExclusionNote}
-                    <div class="item" style="border-top: 1px dashed #ced4da;"><strong>├ 계약금 10%</strong> <span class="amount">${contract.toFixed(1)}억</span></div>
-                    <div class="item"><strong>├ 중도금 60%</strong> <span class="amount">${midTotal.toFixed(1)}억</span></div>
-                    <div class="sub-item"><strong>│ ├ 전환 대출</strong> <span class="convertible">${midConvertible.toFixed(1)}억</span></div>
-                    <div class="sub-item"><strong>│ └ 자납</strong> <span class="self-mid">${selfMid.toFixed(1)}억</span></div>
-                    <div class="item"><strong>├ 잔금 30%</strong> <span class="amount">${balance.toFixed(1)}억</span></div>
-                    <div class="item"><strong>├ 추가 비용</strong> <span class="amount">${totalCost.toFixed(2)}억</span></div>`;
-                breakdownHtml = `<div class="item"><strong>건설사 알선 (${midRate}%)</strong> <span class="amount">${midLoanPossible.toFixed(1)}억</span></div>
-                    <div class="item"><strong>LTV (${currentLTVRate})</strong> <span class="amount">${ltvAmt.toFixed(1)}억</span></div>
-                    <div class="item"><strong>DSR (40%+스트레스)</strong> <span class="amount">${dsrAmt.toFixed(1)}억</span></div>`;
-                if (isRegulatedCap) breakdownHtml += `<div class="item"><strong>고가한도</strong> <span class="amount">${priceCap}억</span></div>`;
+                // 청약/분양
+
+                const contract = price * 0.1;           // 계약금 (10%)
+                const midTotal = price * 0.6;           // 중도금 총액 (60%)
+                const midSelf = midTotal - midLoanPossible; // 중도금 중 자납 필요분 (20%)
+                const balance = price * 0.3;            // 잔금 (30%)
+                
+                // 잔금 대출이 중도금 대환에 먼저 사용되고, 남은 대출액이 잔금 납부에 충당된다고 가정
+                const finalLoanUsedToRepayMid = Math.min(finalLoan, midLoanPossible); // 잔금대출로 중도금 갚는 금액
+                const loanForBalance = Math.max(0, finalLoan - finalLoanUsedToRepayMid); // 잔금 납부에 충당 가능한 잔금 대출액
+                
+                const midLoanNotFullyCovered = midLoanPossible > finalLoan ? midLoanPossible - finalLoan : 0; // 중도금 상환에 현금 필요분 (대출 한도 부족)
+                
+                // 요청사항: 총 잔금(30%) - 최대 잔금 대출(finalLoan) = 잔금 현금 필요액
+                // 이 수식은 '중도금 대환'을 무시한 단순 계산이므로, 복합 로직 대신 요청하신 단순 잔금 현금 필요액을 계산합니다.
+                // 잔금 납부에 충당할 수 있는 최대 대출액: 잔금(30%)과 최대 잔금 대출(finalLoan) 중 적은 금액을 대출로 충당 가능.
+                const cashPaymentForBalanceSimple = Math.max(0, balance - finalLoan); // 단순 잔금 - 대출로 인한 현금 필요액
+                const totalCashAtMoveInSimple = cashPaymentForBalanceSimple + totalCost;
+                
+                // **현금 지출 최종 금액 (요청사항의 의도를 반영한 복합 로직 사용)**
+                // 계약금 (10%) + 자납 중도금 (20%) + 입주 시 현금 지출 (잔금 납부 현금 + 중도금 상환 부족분 + 부대비용)
+                const cashOutAtMoveIn_step3_4 = midLoanNotFullyCovered + (balance - loanForBalance) + totalCost;
+                const finalCashOutlay = contract + midSelf + cashOutAtMoveIn_step3_4; 
+                
+                // --- 3단계 내용 수정 (요청사항 반영) ---
+                const balanceCashReq = Math.max(0, balance - finalLoan); // 잔금 30% 중 대출 한도 초과로 인해 현금으로 필요한 금액
+                
+                const loanFlowHtml = `
+                    <h4>1단계: 계약금 납부 (10%)</h4>
+                    <div class="item">
+                        <strong>현금 지출액 (계약금)</strong> 
+                        <span class="big-amount" style="color: #d9480f;">${contract.toFixed(2)}억</span>
+                    </div>
+                    <p class="small-note">분양 계약 체결 시 현금으로 납부하는 금액입니다.</p>
+                    
+                    <h4>2단계: 중도금 납부 (60%)</h4>
+                    <div class="item"><strong>총 중도금</strong> <span class="amount">${midTotal.toFixed(1)}억</span></div>
+                    <div class="item sub-item">
+                        <!-- 파란색 수정 -->
+                        └ 집단 대출 (${(midRate).toFixed(0)}%) <span class="loan-bg amount mid-loan-amount">${midLoanPossible.toFixed(1)}억</span>
+                    </div>
+                    <div class="item sub-item" style="border-bottom:none;">
+                        <strong>└ 자납 중도금 (${((1 - midRate/100) * 100).toFixed(0)}%)</strong> 
+                        <span class="big-amount" style="color: #d9480f;">${midSelf.toFixed(2)}억</span>
+                    </div>
+                    <p class="small-note">입주 전까지 대출 이자만 납부하며, 자납분은 현금으로 지출됩니다.</p>
+                    
+                    <h4>3단계: 잔금 대출 실행 및 최종 정산 (입주 시점)</h4>
+                    <div class="item loan-flow-item"><strong>총 잔금액 (30%)</strong> <span class="amount">${balance.toFixed(2)}억</span></div>
+                    <div class="item loan-flow-item"><strong>최대 잔금 대출 실행금</strong> <span class="loan-bg amount" style="color:#007bff !important;">${finalLoan.toFixed(2)}억</span></div>
+                    <div class="item loan-flow-item" style="border-top: 1px dashed #ced4da;">
+                        <strong>잔금 현금 필요액 (잔금 - 대출)</strong> 
+                        <!-- 잔금에서 최대 잔금 대출을 단순 차감하여 현금 필요액 계산 -->
+                        <span class="big-amount" style="color:#d9480f;">${Math.max(0, balance - finalLoan).toFixed(2)}억</span>
+                    </div>
+                    
+                    <div style="margin-top: 10px; padding: 10px; background: #fff;">
+                        <p class="small-note" style="text-align: left; font-weight: 600; margin-top: 0;">
+                            * 잔금 납부 시 현금으로 총 
+                            <span class="convertible" style="color:#dc3545;">${(midLoanNotFullyCovered + balanceCashReq).toFixed(2)}억</span>이 지출됩니다.
+                        </p>
+                        <p class="small-note" style="text-align: left;">
+                            (잔금 대출 한도 초과분 + 중도금 대환 부족분)
+                        </p>
+                    </div>
+
+                    <h4>4단계: 부대비용 납부 (취득세 3.3% 기준)</h4>
+                    <div class="item loan-flow-item">
+                        <strong>총 부대비용 지출액</strong> 
+                        <span class="big-amount" style="color:#d9480f;">${totalCost.toFixed(2)}억</span>
+                    </div>
+                    <div class="item sub-item">└ 취득세 (3.3%) <span class="amount">${tax.toFixed(2)}억</span></div>
+                    <div class="item sub-item">└ 중개 보수료 (0.6%) <span class="amount">${brokerage.toFixed(2)}억</span></div>
+                    <div class="item sub-item" style="border-bottom:none;">└ 기타 비용 <span class="amount">${etc.toFixed(1)}억</span></div>
+                    <p class="small-note">부대비용은 현금으로 납부해야 하는 지출액입니다.</p>
+
+                    <h4>5단계: 총 현금 지출 발생액 (최종 현금 필요액)</h4>
+                    <div class="item" style="border-top: 3px double #dc3545; margin-top: 15px; padding: 15px 0;">
+                        <strong>총 현금 지출 발생액 (최종 현금 필요액)</strong> 
+                        <span class="convertible big-amount" style="font-size: 1.6rem; color: #dc3545;">${finalCashOutlay.toFixed(2)}억</span>
+                    </div>
+                    <p class="small-note">
+                        (구성: 1단계 계약금 + 2단계 자납 중도금 + 3단계 현금 납부액 + 4단계 부대비용)
+                    </p>
+                `;
+
+                document.getElementById('loan-flow-section').style.display = 'block';
+                document.getElementById('loan-flow-content').innerHTML = loanFlowHtml;
             }
             
             // 총 자금 (Total Funding) 계산
@@ -338,16 +546,11 @@
             
             const ok = remain >= 0;
             
-            document.getElementById('final-loan-detail').innerHTML = `<div class="big-amount">${finalLoan.toFixed(1)}억</div><p>${minSource} 기준</p>`;
-            document.getElementById('loan-breakdown').innerHTML = breakdownHtml;
-            document.getElementById('outlay-items').innerHTML = outlayHtml;
-            
-            // 총 정리(total-summary) 부분 (수정됨: 괄호 부분 줄바꿈)
             document.getElementById('total-summary').innerHTML = `
-                <div class="item"><strong>A. 총 비용<br>(주택가 + 부대비용)</strong> <span class="big-amount">${(price + totalCost).toFixed(2)}억</span></div>
-                <div class="item"><strong>B. 확보된 자금<br>(자산 + 대출)</strong> <span class="big-amount" style="color:#007bff;">${totalFunding.toFixed(2)}억</span></div>
+                <div class="item"><strong>A. 총 비용<br>(주택가 + 부대비용)</strong> <span class="big-amount total-outlay">${(price + totalCost).toFixed(2)}억</span></div>
+                <div class="item"><strong>B. 확보된 자금<br>(자산 + 잔금대출)</strong> <span class="big-amount total-outlay" style="color:#007bff;">${totalFunding.toFixed(2)}억</span></div>
                 <div class="item sub-item" style="border-bottom: none;">└ 보유 자산 (현금) <span class="amount">${assets.toFixed(1)}억</span></div>
-                <div class="item sub-item">└ 최대 대출금 <span class="amount">${finalLoan.toFixed(1)}억</span></div>
+                <div class="item sub-item">└ 최대 잔금 대출금 <span class="loan-bg amount">${finalLoan.toFixed(1)}억</span></div>
                 <div class="item" style="border-top:3px double #ced4da;">
                     <strong>C. 최종 잔여 현금 (B - A)</strong> 
                     <span class="highlight">${remain.toFixed(2)}억</span>
@@ -355,7 +558,7 @@
             `;
 
             const remainText = remain >= 0 ? `${remain.toFixed(2)}억 여유` : `${Math.abs(remain).toFixed(2)}억 부족`;
-            document.getElementById('feasibility').innerHTML = `<span class="${ok ? 'possible' : 'impossible'}">${ok ? '가능' : '불가'} (${remainText})</span>`;
+            document.getElementById('feasibility').innerHTML = `<span class="${ok ? 'possible' : 'impossible'}">${ok ? '자금 조달 가능' : '자금 조달 부족'} (${remainText})</span>`;
             
             const P = finalLoan * 100000000;
             const r = rate / 100 / 12;
