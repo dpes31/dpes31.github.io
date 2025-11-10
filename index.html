@@ -144,15 +144,15 @@
 
         <div class="tip-box">
             <strong>쉽게 이해하기</strong><br>
-            • 중도금 대출 = 임시 → 잔금 시 최종 한도 적용<br>
-            • 자납 중도금 = 알선 안되는 부분 + 초과분 (전체 현금)
+            • 중도금 대출 = 임시 (분양가 비율) → 잔금 시 최종 한도 적용<br>
+            • 자납 중도금 = 알선 안되는 부분 + 초과분 (현금)
         </div>
     </div>
 
     <script>
         const reg = {
             ltv: { seoul: 0.4, capital: 0.4, local: 0.7 },
-            dsrMultiplier: 4.5,
+            dsrMultiplier: 5.625,  // 간단 DSR: 소득 × 5.625억
             lotteryLimit: { low: 6, high15: 4, high25: 2 },
             costs: { tax: 0.015, etc: 0.1 },
             defaultRate: 3.3
@@ -208,7 +208,7 @@
             const minSource = finalLoan === ltvAmt ? 'LTV' : finalLoan === dsrAmt ? 'DSR' : '분양가 한도';
 
             const midTotal = type === 'lottery' ? price * 0.6 : 0;
-            const midLoanPossible = midTotal * (midRate / 100);
+            const midLoanPossible = price * (midRate / 100);
             const midExcess = midLoanPossible > finalLoan ? midLoanPossible - finalLoan : 0;
             const midConvertible = midLoanPossible - midExcess;
             const selfMid = midTotal - midConvertible;
