@@ -21,7 +21,17 @@
         #result { margin-top: 32px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: none; }
         .section { margin-bottom: 32px; padding: 20px; background: #f8f9fa; border-radius: 12px; border: 1px solid #dee2e6; }
         .section h3 { margin: 0 0 16px; font-size: 1.2rem; color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 8px; }
-        .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #ced4da; font-size: 1rem; }
+        /* 1. 자동 줄바꿈을 위한 CSS 추가 */
+        .item { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 10px 0; 
+            border-bottom: 1px dashed #ced4da; 
+            font-size: 1rem;
+            /* 괄호 안 텍스트의 줄바꿈을 허용 */
+            word-break: break-word;
+            white-space: normal;
+        }
         .item:last-child { border-bottom: none; }
         .item strong { color: #212529; }
         .amount { font-weight: bold; color: #007bff; }
@@ -51,11 +61,32 @@
         .self-mid { color: #007bff; font-weight: bold; }
         .ltv-display { font-size: 1.2rem; font-weight: bold; color: #d9480f; margin: 12px 0; text-align: center; background: #fff; padding: 12px; border-radius: 8px; }
         .cap-display { font-size: 1.1rem; font-weight: bold; color: #dc3545; margin: 12px 0; text-align: center; background: #fff; padding: 12px; border-radius: 8px; display: none; }
+
+        /* 주석 스타일 조정 */
+        .loan-note { 
+            font-size: 0.85rem; 
+            color: #6c757d; 
+            text-align: right; 
+            padding: 4px 0 10px; /* 위치 조정 */
+            line-height: 1.3;
+        }
+        .policy-btn {
+            display: inline-block; 
+            margin: 8px 0; 
+            padding: 6px 12px; 
+            background: #007bff; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
     <h1>2025 부동산 투자 시뮬레이터</h1>
-    <p class="desc">2025.11.10 금융위원회 FAQ 최신 적용</p>
+    <!-- 선택 영역 수정 -->
+    <p class="desc">2025.10.15 규제 (금융위원회 FAQ)</p>
     <form id="simulatorForm">
         <label>주택 유형</label>
         <select id="type" onchange="toggleMidLoan(); updateRules()">
@@ -81,7 +112,8 @@
             <option value="yes">예 (무주택+소득1억이하+9억이하)</option>
         </select>
         <div id="special-note" class="special-note">
-            우대 적용 시 규제지역 LTV 70%, 비규제 80% (2025.10.16~ 미적용, 보수적 40/70% 유지)
+            <!-- 날짜 수정 -->
+            우대 적용 시 규제지역 LTV 70%, 비규제 80% (2025.10.15~ 미적용, 보수적 40/70% 유지)
         </div>
         <div class="ltv-display" id="ltv-display">LTV: 계산 중...</div>
         <div class="cap-display" id="cap-display">고가한도: 적용 중...</div>
@@ -136,7 +168,11 @@
             </div>
         </div>
         <div class="tip-box">
-            <strong>2025.10.16 규제 (금융위원회 FAQ)</strong><br>
+            <!-- 1. 날짜 수정 및 버튼 추가 -->
+            <strong>2025.10.15 규제 (금융위원회 FAQ)</strong>
+            <br>
+            <a href="https://www.fsc.go.kr/po020201/85518?srchCtgry=&curPage=&srchKey=&srchText=&srchBeginDt=&srchEndDt=" target="_blank" class="policy-btn">[주요 정책 보기]</a>
+            <br>
             • 규제지역 LTV 40% (다주택 0%, 중도금/이주비 제외)<br>
             • 수도권·규제지역 고가한도: 15억이하 6억, 15-25억 4억, 25억초과 2억<br>
             • 스트레스 DSR 금리 3.0% (비규제 제외)<br>
@@ -235,8 +271,7 @@
             const totalCost = tax + etc;
             let totalOutlay, outlayHtml, breakdownHtml;
             
-            // 공통 주석 (최대 대출금 제외 기준)을 위한 변수
-            const loanExclusionNote = `<div class="sub-item small-note" style="padding-left:0; text-align:right;">(최대 대출금 ${finalLoan.toFixed(1)}억 제외 기준)</div>`;
+            const loanExclusionNote = `<div class="loan-note">(최대 대출금 ${finalLoan.toFixed(1)}억 제외 기준)</div>`;
             
             if (type === 'buy') {
                 const cashOutlay = price - finalLoan + totalCost; // 총 필요 현금 = (주택가격 - 대출) + 비용
@@ -245,7 +280,7 @@
                 outlayHtml = `<div class="item"><strong>주택가격</strong> <span class="amount">${price.toFixed(1)}억</span></div>
                     <div class="item"><strong>총 나갈 돈 (현금 필요액)</strong> <span class="big-amount">${cashOutlay.toFixed(2)}억</span></div>
                     ${loanExclusionNote}
-                    <div class="item"><strong>├ 대출 제외 잔금</strong> <span class="amount">${(price - finalLoan).toFixed(2)}억</span></div>
+                    <div class="item" style="border-top: 1px dashed #ced4da;"><strong>├ 대출 제외 잔금</strong> <span class="amount">${(price - finalLoan).toFixed(2)}억</span></div>
                     <div class="item"><strong>├ 취득세 등</strong> <span class="amount">${tax.toFixed(2)}억</span></div>
                     <div class="item"><strong>└ 기타 비용</strong> <span class="amount">${etc.toFixed(1)}억</span></div>`;
                 
@@ -265,7 +300,7 @@
                 outlayHtml = `<div class="item"><strong>분양가</strong> <span class="amount">${price.toFixed(1)}억</span></div>
                     <div class="item"><strong>총 나갈 돈 (현금 필요액)</strong> <span class="big-amount">${totalOutlay.toFixed(1)}억</span></div>
                     ${loanExclusionNote}
-                    <div class="item"><strong>├ 계약금 10%</strong> <span class="amount">${contract.toFixed(1)}억</span></div>
+                    <div class="item" style="border-top: 1px dashed #ced4da;"><strong>├ 계약금 10%</strong> <span class="amount">${contract.toFixed(1)}억</span></div>
                     <div class="item"><strong>├ 중도금 60%</strong> <span class="amount">${midTotal.toFixed(1)}억</span></div>
                     <div class="sub-item"><strong>│ ├ 전환 대출</strong> <span class="convertible">${midConvertible.toFixed(1)}억</span></div>
                     <div class="sub-item"><strong>│ └ 자납</strong> <span class="self-mid">${selfMid.toFixed(1)}억</span></div>
@@ -280,7 +315,7 @@
             // 총 자금 (Total Funding) 계산
             const totalFunding = assets + finalLoan;
 
-            // 현금 잔여/부족분 계산 (기존 remain 변수 재사용)
+            // 현금 잔여/부족분 계산
             const remain = totalFunding - (price + totalCost);
             
             const ok = remain >= 0;
@@ -289,7 +324,7 @@
             document.getElementById('loan-breakdown').innerHTML = breakdownHtml;
             document.getElementById('outlay-items').innerHTML = outlayHtml;
             
-            // ***** 총 정리(total-summary) 부분 *****
+            // 총 정리(total-summary) 부분 (변동 없음)
             document.getElementById('total-summary').innerHTML = `
                 <div class="item"><strong>A. 총 비용 (주택가 + 부대비용)</strong> <span class="big-amount">${(price + totalCost).toFixed(2)}억</span></div>
                 <div class="item"><strong>B. 확보된 자금 (자산 + 대출)</strong> <span class="big-amount" style="color:#007bff;">${totalFunding.toFixed(2)}억</span></div>
@@ -300,7 +335,6 @@
                     <span class="highlight">${remain.toFixed(2)}억</span>
                 </div>
             `;
-            // *************************************************
 
             const remainText = remain >= 0 ? `${remain.toFixed(2)}억 여유` : `${Math.abs(remain).toFixed(2)}억 부족`;
             document.getElementById('feasibility').innerHTML = `<span class="${ok ? 'possible' : 'impossible'}">${ok ? '가능' : '불가'} (${remainText})</span>`;
