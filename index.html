@@ -16,6 +16,7 @@
         input::placeholder { color: #adb5bd; }
         .underline { text-decoration: underline; text-decoration-color: #007bff; text-decoration-thickness: 2px; }
         .mid-loan { display: none; }
+        .special-note { display: none; background: #e7f3ff; padding: 12px; border-radius: 8px; margin-top: 8px; font-size: 0.9rem; }
         button { margin-top: 24px; width: 100%; padding: 14px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; }
         button:active { background: #0056b3; }
         #result { margin-top: 32px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: none; }
@@ -49,48 +50,58 @@
         .sub-item { padding-left: 20px; font-size: 0.95rem; color: #495057; }
         .convertible { color: #dc3545; font-weight: bold; }
         .self-mid { color: #007bff; font-weight: bold; }
+        .ltv-display { font-size: 1.2rem; font-weight: bold; color: #d9480f; margin: 12px 0; text-align: center; background: #fff; padding: 12px; border-radius: 8px; }
     </style>
 </head>
 <body>
     <h1>2025 부동산 투자 시뮬레이터</h1>
-    <p class="desc">일반 매매 · 청약/분양 한눈에 계산 (2025.11.10 기준)</p>
+    <p class="desc">규제지역만 선택 → LTV 자동 (2025.11.10 최신)</p>
 
     <form id="simulatorForm">
         <label>주택 유형</label>
-        <select id="type" onchange="toggleMidLoan()">
+        <select id="type" onchange="toggleMidLoan(); updateLTV()">
             <option value="buy">일반 매매</option>
             <option value="lottery">청약/분양</option>
         </select>
 
         <label>주택 가격 (억 원)</label>
-        <input type="number" id="price" placeholder="10" step="0.1" oninput="showLotteryLimit()">
+        <input type="number" id="price" placeholder="10" step="0.1" oninput="updateLTV(); showLotteryLimit()">
 
         <div id="lottery-limit" style="display:none; background:#e7f3ff; padding:8px; border-radius:6px; font-size:0.9rem; margin:8px 0;"></div>
 
-        <label>보유 자산 (억 원)</label>
-        <input type="number" id="assets" placeholder="3" step="0.1">
-
         <label>투자 지역</label>
-        <select id="region">
-            <option value="seoul">서울</option>
-            <option value="capital">수도권</option>
-            <option value="local">지방</option>
+        <select id="region" onchange="updateLTV()">
+            <option value="regulated">규제지역 (서울·수도권)</option>
+            <option value="non">비규제지역 (지방)</option>
         </select>
 
-        <label>연간 소득 (세전, 억 원)</label>
-        <input type="number" id="income" placeholder="1" step="0.1">
-
         <label>보유 주택 수</label>
-        <select id="houses">
+        <select id="houses" onchange="updateLTV()">
             <option value="0">무주택</option>
             <option value="1">1주택</option>
             <option value="multi">다주택</option>
         </select>
 
+        <label>서민·실수요자 우대</label>
+        <select id="special" onchange="updateLTV()">
+            <option value="no">아니오</option>
+            <option value="yes">예</option>
+        </select>
+        <div id="special-note" class="special-note">
+            우대: 무주택 세대주, 소득 ~1억, 주택 9억 이하. 규제 70% / 비규제 80%
+        </div>
+
+        <div class="ltv-display" id="ltv-display">LTV: 계산 중...</div>
+
+        <label>보유 자산 (억 원)</label>
+        <input type="number" id="assets" placeholder="3" step="0.1">
+
+        <label>연간 소득 (세전, 억 원)</label>
+        <input type="number" id="income" placeholder="1" step="0.1">
+
         <div class="mid-loan">
-            <label>건설사 알선 <span class="underline">중도금 대출 비율</span> (%)</label>
+            <label>건설사 중도금 대출 비율 (%)</label>
             <input type="number" id="midLoanRate" placeholder="40" step="5" min="0" max="60">
-            <small style="color:#6c757d;">2025 규제 기본 40% · 잔금 전환 시 한도 적용</small>
         </div>
 
         <label>대출 금리 (%)</label>
@@ -117,7 +128,7 @@
         <div class="section">
             <h3>2. 청약 개요 및 나갈 돈</h3>
             <div id="outlay-items"></div>
-            <p class="small-note">보유 자산 처분으로 발생되는 양도세, 복비, 기타 세금은 반영하지 않았습니다.</p>
+            <p class="small-note">양도세·복비 미반영</p>
         </div>
 
         <div class="section summary">
@@ -127,36 +138,38 @@
         </div>
 
         <div id="interest-section">
-            <h3><span id="total-loan-display"></span>억 대출 시 월 상환액 비교 (30년 기준)</h3>
+            <h3><span id="total-loan-display"></span>억 대출 월 상환 (30년)</h3>
             <div class="repay-box">
                 <div class="repay-card recommend">
-                    <h4>원금 균등 상환 (추천)</h4>
+                    <h4>원금 균등 (추천)</h4>
                     <div class="monthly" id="monthly-equal-principal"></div>
-                    <small>초기 부담 적음<br>총이자 ↓</small>
+                    <small>총이자 ↓</small>
                 </div>
                 <div class="repay-card">
-                    <h4>원리금 균등 상환</h4>
+                    <h4>원리금 균등</h4>
                     <div class="monthly" id="monthly-level-payment"></div>
-                    <small>매월 동일 금액</small>
+                    <small>매월 동일</small>
                 </div>
             </div>
         </div>
 
         <div class="tip-box">
-            <strong>쉽게 이해하기</strong><br>
-            • 중도금 대출 = 임시 (분양가 비율) → 잔금 시 최종 한도 적용<br>
-            • 자납 중도금 = 알선 안되는 부분 + 초과분 (현금)
+            <strong>2025 규제</strong><br>
+            • 규제지역 기본 40% (우대 70%)<br>
+            • 비규제 기본 70% (우대 80%)<br>
+            • 다주택 0%
         </div>
     </div>
 
     <script>
         const reg = {
-            ltv: { seoul: 0.4, capital: 0.4, local: 0.7 },
-            dsrMultiplier: 5.625,  // 간단 DSR: 소득 × 5.625억
+            dsrMultiplier: 5.625,
             lotteryLimit: { low: 6, high15: 4, high25: 2 },
             costs: { tax: 0.015, etc: 0.1 },
             defaultRate: 3.3
         };
+
+        let currentLTV = 0;
 
         function toggleMidLoan() {
             const isLottery = document.getElementById('type').value === 'lottery';
@@ -170,41 +183,46 @@
             let cap = reg.lotteryLimit.low;
             if (price > 25) cap = reg.lotteryLimit.high25;
             else if (price > 15) cap = reg.lotteryLimit.high15;
-            document.getElementById('lottery-limit').innerHTML = `최종 대출 한도: ${cap}억 원`;
+            document.getElementById('lottery-limit').innerHTML = `청약 대출 한도: ${cap}억 원`;
             document.getElementById('lottery-limit').style.display = 'block';
         }
 
-        document.querySelectorAll('input[type=number]').forEach(inp => {
-            inp.addEventListener('focus', function() { this.select(); });
-            inp.addEventListener('blur', function() { if(this.value === '') this.value = this.placeholder; });
-        });
+        function updateLTV() {
+            const region = document.getElementById('region').value;
+            const houses = document.getElementById('houses').value;
+            const special = document.getElementById('special').value;
+            const price = parseFloat(document.getElementById('price').value) || 0;
 
-        toggleMidLoan();
+            document.getElementById('special-note').style.display = special === 'yes' ? 'block' : 'none';
+
+            if (houses === 'multi') {
+                currentLTV = 0;
+                document.getElementById('ltv-display').innerHTML = '다주택: LTV 0% (대출 불가)';
+                return;
+            }
+
+            const base = region === 'regulated' ? 0.4 : 0.7;
+            currentLTV = special === 'yes' ? (region === 'regulated' ? 0.7 : 0.8) : base;
+
+            document.getElementById('ltv-display').innerHTML = `LTV ${currentLTV * 100}% → 최대 ${ (price * currentLTV).toFixed(1) }억`;
+        }
 
         function calculate() {
             const type = document.getElementById('type').value;
             const price = parseFloat(document.getElementById('price').value) || 0;
             const assets = parseFloat(document.getElementById('assets').value) || 0;
-            const region = document.getElementById('region').value;
             const income = parseFloat(document.getElementById('income').value) || 0;
-            const houses = document.getElementById('houses').value;
             const midRate = type === 'lottery' ? parseFloat(document.getElementById('midLoanRate').value) || 40 : 0;
             const rate = parseFloat(document.getElementById('interestRate').value) || reg.defaultRate;
 
-            let ltv = reg.ltv[region];
-            if (houses === 'multi' && (region === 'seoul' || region === 'capital')) ltv = 0;
-            if (type === 'lottery' && houses === '0') ltv = 0.7;
-            const ltvAmt = price * ltv;
+            const ltvAmt = price * currentLTV;
             const dsrAmt = income * reg.dsrMultiplier;
 
-            let finalLoan = type === 'buy' ? Math.min(ltvAmt, dsrAmt) : 0;
             let cap = reg.lotteryLimit.low;
             if (price > 25) cap = reg.lotteryLimit.high25;
             else if (price > 15) cap = reg.lotteryLimit.high15;
-            if (type === 'lottery') {
-                if (region !== 'local') cap = Math.min(cap, 6);
-                finalLoan = Math.min(ltvAmt, dsrAmt, cap);
-            }
+
+            let finalLoan = type === 'buy' ? Math.min(ltvAmt, dsrAmt) : Math.min(ltvAmt, dsrAmt, cap);
             const minSource = finalLoan === ltvAmt ? 'LTV' : finalLoan === dsrAmt ? 'DSR' : '분양가 한도';
 
             const midTotal = type === 'lottery' ? price * 0.6 : 0;
@@ -222,59 +240,58 @@
 
             const totalOutlay = contract + selfMid + balance + totalCost;
             const remain = assets - totalOutlay;
-
             const ok = remain >= 0;
 
             document.getElementById('final-loan-detail').innerHTML = `
-                <div class="big-amount">${finalLoan.toFixed(1)}억 원</div>
-                <p>${minSource} 기준 최소값 선택</p>
+                <div class="big-amount">${finalLoan.toFixed(1)}억</div>
+                <p>${minSource} 기준</p>
             `;
             document.getElementById('loan-breakdown').innerHTML = `
                 <div class="item"><strong>건설사 알선 (${midRate}%)</strong> <span class="amount">${midLoanPossible.toFixed(1)}억</span></div>
-                <div class="item"><strong>분양가 한도 기준</strong> <span class="amount">${cap.toFixed(1)}억</span></div>
-                <div class="item"><strong>LTV 기준</strong> <span class="amount">${ltvAmt.toFixed(1)}억</span></div>
-                <div class="item"><strong>DSR 기준</strong> <span class="amount">${dsrAmt.toFixed(1)}억</span></div>
+                <div class="item"><strong>분양가 한도</strong> <span class="amount">${cap.toFixed(1)}억</span></div>
+                <div class="item"><strong>LTV (${currentLTV*100}%)</strong> <span class="amount">${ltvAmt.toFixed(1)}억</span></div>
+                <div class="item"><strong>DSR</strong> <span class="amount">${dsrAmt.toFixed(1)}억</span></div>
             `;
 
-            let outlayHtml = `<div class="item"><strong>분양가</strong> <span class="amount">${price.toFixed(1)}억</span></div>`;
-            outlayHtml += `<div class="item"><strong>총 나갈 돈</strong> <span class="amount big-amount">${totalOutlay.toFixed(1)}억</span></div>`;
-            outlayHtml += `<div class="item"><strong>├ 계약금 (10%)</strong> <span class="amount">${contract.toFixed(1)}억</span></div>`;
+            let outlayHtml = `<div class="item"><strong>분양가</strong> <span class="amount">${price.toFixed(1)}억</span></div>
+                <div class="item"><strong>총 나갈 돈</strong> <span class="big-amount">${totalOutlay.toFixed(1)}억</span></div>
+                <div class="item"><strong>├ 계약금 10%</strong> <span class="amount">${contract.toFixed(1)}억</span></div>`;
             if (type === 'lottery') {
-                outlayHtml += `<div class="item"><strong>├ 중도금 (60%)</strong> <span class="amount">${midTotal.toFixed(1)}억</span></div>`;
-                outlayHtml += `<div class="sub-item"><strong>│ ├ 최종 대출금 (전환 가능)</strong> <span class="convertible">${midConvertible.toFixed(1)}억</span></div>`;
-                outlayHtml += `<div class="sub-item"><strong>│ └ 자납 중도금 (현금)</strong> <span class="self-mid">${selfMid.toFixed(1)}억</span></div>`;
-                outlayHtml += `<div class="item"><strong>├ 잔금 (30%)</strong> <span class="amount">${balance.toFixed(1)}억</span></div>`;
+                outlayHtml += `<div class="item"><strong>├ 중도금 60%</strong> <span class="amount">${midTotal.toFixed(1)}억</span></div>
+                    <div class="sub-item"><strong>│ ├ 전환 대출</strong> <span class="convertible">${midConvertible.toFixed(1)}억</span></div>
+                    <div class="sub-item"><strong>│ └ 자납</strong> <span class="self-mid">${selfMid.toFixed(1)}억</span></div>
+                    <div class="item"><strong>├ 잔금 30%</strong> <span class="amount">${balance.toFixed(1)}억</span></div>`;
             }
-            outlayHtml += `<div class="item"><strong>├ 추가 비용 (취득세 1.5% + 기타)</strong> <span class="amount">${totalCost.toFixed(2)}억</span></div>`;
+            outlayHtml += `<div class="item"><strong>├ 추가 비용</strong> <span class="amount">${totalCost.toFixed(2)}억</span></div>`;
             document.getElementById('outlay-items').innerHTML = outlayHtml;
 
-            let summaryHtml = '';
-            summaryHtml += `<div class="item"><strong>주택 가격</strong> <span class="amount">${price.toFixed(1)}억</span></div>`;
-            summaryHtml += `<div class="item"><strong>총 나갈 돈</strong> <span class="amount">${totalOutlay.toFixed(1)}억</span></div>`;
-            summaryHtml += `<div class="item"><strong>대출 총액</strong> <span class="amount">${finalLoan.toFixed(1)}억</span></div>`;
-            summaryHtml += `<div class="item"><strong>보유 자산</strong> <span class="amount">${assets.toFixed(1)}억</span></div>`;
-            summaryHtml += `<div class="item" style="border-top:3px double #ced4da;"><strong>잔여 자산</strong> <span class="amount highlight">${remain.toFixed(1)}억</span></div>`;
-            document.getElementById('total-summary').innerHTML = summaryHtml;
+            document.getElementById('total-summary').innerHTML = `
+                <div class="item"><strong>가격</strong> <span class="amount">${price.toFixed(1)}억</span></div>
+                <div class="item"><strong>나갈 돈</strong> <span class="amount">${totalOutlay.toFixed(1)}억</span></div>
+                <div class="item"><strong>대출</strong> <span class="amount">${finalLoan.toFixed(1)}억</span></div>
+                <div class="item"><strong>자산</strong> <span class="amount">${assets.toFixed(1)}억</span></div>
+                <div class="item" style="border-top:3px double #ced4da;"><strong>잔여</strong> <span class="highlight">${remain.toFixed(1)}억</span></div>
+            `;
 
             const remainText = remain >= 0 ? `${remain.toFixed(1)}억 여유` : `${Math.abs(remain).toFixed(1)}억 부족`;
-            const feasibilityText = ok ? '청약 가능' : '청약 불가';
-            document.getElementById('feasibility').innerHTML = `<span class="${ok ? 'possible' : 'impossible'}">
-                ${feasibilityText} (${remainText})
-            </span>`;
+            document.getElementById('feasibility').innerHTML = `<span class="${ok ? 'possible' : 'impossible'}">${ok ? '가능' : '불가'} (${remainText})</span>`;
 
             const P = finalLoan * 100000000;
             const r = rate / 100 / 12;
             const n = 360;
-            const avgMonthlyEqual = P / n + (P * r + (P / n) * r) / 2;
-            let monthlyLevel = r > 0 ? P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1) : P / n;
+            const avgEqual = P / n + (P * r + P / n * r) / 2;
+            const level = r > 0 ? P * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1) : P / n;
 
-            document.getElementById('monthly-equal-principal').innerHTML = `${Math.round(avgMonthlyEqual / 10000).toLocaleString()} 만원`;
-            document.getElementById('monthly-level-payment').innerHTML = `${Math.round(monthlyLevel / 10000).toLocaleString()} 만원`;
+            document.getElementById('monthly-equal-principal').innerHTML = `${Math.round(avgEqual / 10000).toLocaleString()}만원`;
+            document.getElementById('monthly-level-payment').innerHTML = `${Math.round(level / 10000).toLocaleString()}만원`;
             document.getElementById('total-loan-display').innerHTML = finalLoan.toFixed(1);
 
             document.getElementById('result').style.display = 'block';
-            window.scrollTo(0, document.getElementById('result').offsetTop - 20);
+            window.scrollTo({ top: document.getElementById('result').offsetTop - 20, behavior: 'smooth' });
         }
+
+        updateLTV();
+        toggleMidLoan();
     </script>
 </body>
 </html>
