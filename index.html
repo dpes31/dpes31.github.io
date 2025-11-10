@@ -21,21 +21,39 @@
         #result { margin-top: 32px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); display: none; }
         .section { margin-bottom: 32px; padding: 20px; background: #f8f9fa; border-radius: 12px; border: 1px solid #dee2e6; }
         .section h3 { margin: 0 0 16px; font-size: 1.2rem; color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 8px; }
-        /* 1. 자동 줄바꿈을 위한 CSS 추가 */
+        /* 모바일 최적화 수정 */
         .item { 
             display: flex; 
             justify-content: space-between; 
             padding: 10px 0; 
             border-bottom: 1px dashed #ced4da; 
             font-size: 1rem;
-            /* 괄호 안 텍스트의 줄바꿈을 허용 */
-            word-break: break-word;
-            white-space: normal;
+            /* 라벨 부분은 줄바꿈 허용 (기본값) */
+            flex-wrap: wrap; /* 좁은 화면에서 전체 항목이 줄바꿈될 수 있도록 허용 */
+        }
+        .item strong { 
+            color: #212529; 
+            /* 라벨이 줄바꿈될 공간을 확보 */
+            flex-basis: auto; 
+            max-width: 70%; /* 라벨 최대 너비 설정 */
+            word-break: break-word; /* 긴 텍스트 강제 줄바꿈 */
         }
         .item:last-child { border-bottom: none; }
-        .item strong { color: #212529; }
-        .amount { font-weight: bold; color: #007bff; }
-        .big-amount { font-size: 1.8rem; font-weight: bold; color: #d9480f; }
+        /* 금액 부분 - 숫자와 '억' 단위가 떨어지지 않도록 설정 */
+        .amount { 
+            font-weight: bold; 
+            color: #007bff; 
+            white-space: nowrap; /* 줄바꿈 방지 */
+            margin-left: auto; /* 금액을 항상 오른쪽으로 밀어냄 */
+        }
+        .big-amount { 
+            font-size: 1.8rem; 
+            font-weight: bold; 
+            color: #d9480f; 
+            white-space: nowrap; /* 줄바꿈 방지 */
+            margin-left: auto; /* 금액을 항상 오른쪽으로 밀어냄 */
+        }
+        /* 기존 스타일 유지 */
         .final-loan { background: #ffe5e5; border: 3px solid #dc3545; padding: 16px; border-radius: 12px; text-align: center; }
         .summary { background: #fff9db; padding: 20px; border-radius: 12px; border: 2px solid #ffc107; }
         .summary .item { font-size: 1.1rem; padding: 12px 0; }
@@ -156,7 +174,7 @@
             <h3><span id="total-loan-display"></span>억 대출 월 상환 (30년)</h3>
             <div class="repay-box">
                 <div class="repay-card recommend">
-                    <h4>원금 균등 (추천)</h4>
+                    <h4>원금 균등</h4>
                     <div class="monthly" id="monthly-equal-principal"></div>
                     <small>총이자 ↓</small>
                 </div>
@@ -324,10 +342,10 @@
             document.getElementById('loan-breakdown').innerHTML = breakdownHtml;
             document.getElementById('outlay-items').innerHTML = outlayHtml;
             
-            // 총 정리(total-summary) 부분 (변동 없음)
+            // 총 정리(total-summary) 부분 (수정됨: 괄호 부분 줄바꿈)
             document.getElementById('total-summary').innerHTML = `
-                <div class="item"><strong>A. 총 비용 (주택가 + 부대비용)</strong> <span class="big-amount">${(price + totalCost).toFixed(2)}억</span></div>
-                <div class="item"><strong>B. 확보된 자금 (자산 + 대출)</strong> <span class="big-amount" style="color:#007bff;">${totalFunding.toFixed(2)}억</span></div>
+                <div class="item"><strong>A. 총 비용<br>(주택가 + 부대비용)</strong> <span class="big-amount">${(price + totalCost).toFixed(2)}억</span></div>
+                <div class="item"><strong>B. 확보된 자금<br>(자산 + 대출)</strong> <span class="big-amount" style="color:#007bff;">${totalFunding.toFixed(2)}억</span></div>
                 <div class="item sub-item" style="border-bottom: none;">└ 보유 자산 (현금) <span class="amount">${assets.toFixed(1)}억</span></div>
                 <div class="item sub-item">└ 최대 대출금 <span class="amount">${finalLoan.toFixed(1)}억</span></div>
                 <div class="item" style="border-top:3px double #ced4da;">
