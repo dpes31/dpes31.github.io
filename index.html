@@ -373,7 +373,7 @@
                     <div class="p-3 bg-red-50 border border-red-300 rounded-lg mb-4">
                         <p class="text-sm font-semibold text-red-600 mb-1">중도금 대출 (집단 대출)</p>
                         <span class="text-2xl font-extrabold text-red-700">${formatAmount(midLoanPossible, 1)}</span>
-                        <p class="text-xs text-gray-500 mt-1">(${midRate}% 실행 기준, <strong class="text-red-700">입주 시 잔금 대출로 전환 또는 상환 필요</strong>)</p>
+                        <p class="text-xs text-gray-500 mt-1">(${midRate}% 실행 기준, <strong class="text-red-700">잔금 치룰 때 상환 필수</strong>)</p>
                     </div>
                 `;
             }
@@ -522,7 +522,7 @@
                         </div>
                         <!-- 경고 문구 -->
                         <p class="text-sm font-extrabold text-red-600 text-center -mt-2">
-                            **중도금 집단 대출금은 입주 때 잔금 대출로 전환/상환 필요**
+                            **중도금 집단 대출금은 잔금 치룰 때 상환 필수**
                         </p>
                         <!-- 현금 지출 서브 타이틀 -->
                         <div class="p-3 bg-red-50/70 rounded-lg">
@@ -619,7 +619,7 @@
             if (type === 'lottery' && ok) {
                  finalWarning = `
                     <div class="mt-4 p-3 rounded-lg text-center font-extrabold text-sm bg-red-100 border border-red-500">
-                        <span class="text-red-700">**입주시점까지 중도금 대출 상환 불가 시 청약 불가**</span>
+                        <span class="text-red-700">**입주까지 중도금 상환 불가 시 청약 불가**</span>
                     </div>
                 `;
             }
