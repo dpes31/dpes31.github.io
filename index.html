@@ -420,7 +420,7 @@
                     <div class="p-3 bg-red-50 border border-red-300 rounded-lg mb-4">
                         <p class="text-sm font-semibold text-red-600 mb-1">중도금 대출 (집단 대출)</p>
                         <span class="text-2xl font-extrabold text-red-700">${formatAmount(midLoanPossible, 1)}</span>
-                        <p class="text-xs text-gray-500 mt-1">입주 시점 잔금 대출로 전액 상환해야 합니다.</p>
+                        <p class="text-xs text-gray-500 mt-1">입주 시점 전액 상환 필수</p>
                     </div>
                 `;
             }
@@ -540,7 +540,6 @@
                             <span>총 조달 가능 금액 합산</span>
                             <span>${formatAmount(totalFundsAvailable, 1)}</span>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2">※ 잔금 대출로 중도금 대출이 상환됩니다.</p>
                     </div>
 
                     <!-- 3. 🔥 Calculation of Cash to be Held (NEW UNIFIED SECTION) -->
@@ -565,7 +564,7 @@
                             <!-- <div class="text-xs text-gray-500 mb-2">입주 시 납입/상환해야 할 총 금액 (대출/자산 반영 전)</div> -->
                             
                             <div class="flex justify-between items-center text-sm border-b pb-1">
-                                <span>+ 중도금 집단 대출 상환 (${midPaymentRateDisplay}%)</span>
+                                <span>+ 중도금 집단대출 상환 (${midPaymentRateDisplay}%)</span>
                                 <span class="font-bold text-red-600">${formatAmount(loanFromMid, 1)}</span>
                             </div>
                             <div class="flex justify-between items-center text-sm border-b pb-1">
@@ -591,7 +590,7 @@
 
                             <!-- NEW: Name Changed -->
                             <div class="flex justify-between items-center text-sm border-b pb-1">
-                                <span>입주 전후 필요한 현금 (A + B)</span>
+                                <span>입주 전후 필요한 현금(A+B)</span>
                                 <span class="font-extrabold text-gray-800">${formatAmount(totalProjectCostAplusB, 1)}</span>
                             </div>
                             
@@ -716,7 +715,7 @@
                 if (finalLoan > 0) {
                      lotteryWarningHtml = `
                         <div class="mt-4 p-3 bg-yellow-100 border border-yellow-400 rounded-lg text-yellow-700 font-semibold">
-                            <p>🚨 <strong>중요 경고:</strong> 잔금 대출 (주담대)을 받으려면, <span class="text-red-600">입주 후 6개월 내 전입 의무</span>가 발생합니다. 전세 보증금으로 잔금/중도금 상환은 불가합니다.</p>
+                            <p>🚨 <strong>중요 경고:</strong> 잔금 대출(주담대)을 받으려면, <span class="text-red-600">대출 실행 후 6개월 이내 전입 의무</span>가 발생합니다. <span class="text-red-600">전세 보증금으로 잔금/중도금 상환은 불가합니다.</p>
                         </div>
                     `;
                 }
