@@ -427,7 +427,7 @@
             
             loanDetailHtml += `
                 <div class="p-3 bg-blue-50 border border-primary rounded-lg">
-                    <p class="text-sm font-semibold text-primary mb-1">최대 잔금 대출금액</p>
+                    <p class="text-sm font-semibold text-primary mb-1">최대 잔금 대출금</p>
                     <span class="text-3xl font-extrabold text-primary">${formatAmount(finalLoan, 1)}</span>
                 </div>
             `;
@@ -524,7 +524,7 @@
                 outlayHtml = `
                     <!-- 1. Total Subscription Price Details -->
                     <div class="p-3 bg-gray-100 rounded-lg mb-4 border border-gray-300">
-                        <p class="text-base font-bold text-gray-700 mb-2">총 분양가 상세 (Total Price: ${formatAmount(price)})</p>
+                        <p class="text-base font-bold text-gray-700 mb-2">총 분양가 상세 (${formatAmount(price)})</p>
                         <div class="flex justify-between items-center text-sm border-b pb-1"><span>- 계약금 (10%)</span><span class="font-extrabold text-gray-700">${formatAmount(contractDeposit, 1)}</span></div>
                         <div class="flex justify-between items-center text-sm border-b pb-1"><span>- 중도금 (60%)</span><span class="font-extrabold text-gray-700">${formatAmount(totalMidPayment, 1)}</span></div>
                         <div class="flex justify-between items-center text-sm"><span>- 잔금 (30%)</span><span class="font-extrabold text-gray-700">${formatAmount(balancePayment, 1)}</span></div>
@@ -533,14 +533,12 @@
                     <!-- 2. 🏦 Total Available Funds -->
                     <div class="p-3 bg-blue-50 rounded-lg mt-3 border border-primary">
                         <p class="text-base font-bold text-primary mb-2">🏦 총 조달 가능 금액 (대출 + 자산)</p>
-                        <div class="flex justify-between items-center text-sm"><span>최대 잔금 대출금액</span><span class="text-2xl font-extrabold text-primary">${formatAmount(finalLoan, 1)}</span></div>
-                        <div class="flex justify-between items-center text-sm"><span>보유 자산 처분액</span><span class="text-2xl font-extrabold text-secondary">${formatAmount(disposalAssets, 1)}</span></div>
+                        <div class="flex justify-between items-center text-sm"><span>최대 잔금 대출금</span><span class="text-base font-extrabold text-primary">${formatAmount(finalLoan, 1)}</span></div>
+                        <div class="flex justify-between items-center text-sm"><span>보유 자산 처분액</span><span class="text-base font-extrabold text-secondary">${formatAmount(disposalAssets, 1)}</span></div>
                         <!-- NEW: Total Sum -->
                         <div class="flex justify-between items-center text-base font-extrabold pt-2 border-t mt-2 text-primary">
                             <span>총 조달 가능 금액 합산</span>
                             <span>${formatAmount(totalFundsAvailable, 1)}</span>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-2">※ 잔금 대출로 중도금 대출이 상환됩니다.</p>
                     </div>
 
                     <!-- 3. 🔥 Calculation of Cash to be Held (NEW UNIFIED SECTION) -->
@@ -597,7 +595,7 @@
                             
                             <!-- UPDATED: Split deduction -->
                             <div class="flex justify-between items-center text-sm border-b border-dashed pb-1">
-                                <span>- 최대 잔금 대출금액</span>
+                                <span>- 최대 잔금 대출금</span>
                                 <span class="font-bold text-primary">(-) ${formatAmount(finalLoan, 1)}</span>
                             </div>
                             <div class="flex justify-between items-center text-sm border-b border-dashed pb-1">
@@ -673,7 +671,7 @@
                         <span class="text-gray-800">${formatAmount(totalNeeded, 2)}</span>
                     </div>
                     <div class="flex justify-between items-center text-base border-t border-gray-300 pt-2 mt-2">
-                        <span>1. 최대 잔금 대출금액</span> 
+                        <span>1. 최대 잔금 대출금</span> 
                         <span class="font-bold text-primary">${formatAmount(totalAvailableLoan, 2)}</span>
                     </div>
                 `;
