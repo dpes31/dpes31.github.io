@@ -603,9 +603,9 @@
             // Feasibility text based on type
             let feasibilityText;
             if (type === 'lottery') {
-                feasibilityText = ok ? ' ✅  청약/조달 가능' : ' ❌  자금 조달 부족';
+                feasibilityText = ok ? ' ✅  청약 가능' : ' ❌  자금 부족';
             } else {
-                feasibilityText = ok ? ' ✅  자금 조달 가능' : ' ❌  자금 조달 부족';
+                feasibilityText = ok ? ' ✅  매매 가능' : ' ❌  자금 부족';
             }
             const feasibilityClass = ok ? 'bg-secondary/10 text-secondary border-secondary' : 'bg-warning/10 text-warning border-warning';
             document.getElementById('feasibility').innerHTML = `
