@@ -548,36 +548,36 @@
                         
                         <!-- 3-1. I. Cash Required Before Entry (A) -->
                         <div class="mb-4 p-3 bg-green-50 rounded-lg border border-green-300">
-                            <p class="text-base font-bold text-green-700 mb-2 border-b pb-1">I. 입주 전 필요 현금 (A)</p>
-                            <div class="flex justify-between items-center text-sm"><span>- 계약금 (10%)</span><span class="font-extrabold text-green-600">${formatAmount(contractDeposit, 1)}</span></div>
-                            <div class="flex justify-between items-center text-sm"><span>- 자납 중도금 (${(cashForMidPaymentRate * 100).toFixed(0)}%)</span><span class="font-extrabold text-green-600">${formatAmount(cashForMidPayment, 1)}</span></div>
+                            <p class="text-base font-bold text-green-700 mb-2 border-b pb-1">I. 입주 전 필요 현금(A)</p>
+                            <div class="flex justify-between items-center text-sm"><span>- 계약금(10%)</span><span class="font-extrabold text-green-600">${formatAmount(contractDeposit, 1)}</span></div>
+                            <div class="flex justify-between items-center text-sm"><span>- 자납 중도금(${(cashForMidPaymentRate * 100).toFixed(0)}%)</span><span class="font-extrabold text-green-600">${formatAmount(cashForMidPayment, 1)}</span></div>
                             <div class="flex justify-between items-center text-base font-extrabold pt-2 border-t mt-2 text-green-800">
-                                <span>입주 전 현금 지출 합계 (A)</span>
+                                <span>입주 전 현금 지출 합계</span>
                                 <span>${formatAmount(requiredCashA, 1)}</span>
                             </div>
                         </div>
 
                         <!-- 3-2. II. Total Required At Entry (B) -->
                         <div class="mb-4 p-3 bg-red-50 rounded-lg border border-warning">
-                            <p class="text-base font-bold text-warning mb-2 border-b pb-1">II. 입주 시 총 소요액 (B)</p>
+                            <p class="text-base font-bold text-warning mb-2 border-b pb-1">II. 입주 시 총 소요액(B)</p>
                             <!-- REMOVED: Gray info text -->
                             <!-- <div class="text-xs text-gray-500 mb-2">입주 시 납입/상환해야 할 총 금액 (대출/자산 반영 전)</div> -->
                             
                             <div class="flex justify-between items-center text-sm border-b pb-1">
-                                <span>+ 중도금 집단대출 상환 (${midPaymentRateDisplay}%)</span>
+                                <span>+ 중도금 집단대출 상환(${midPaymentRateDisplay}%)</span>
                                 <span class="font-bold text-red-600">${formatAmount(loanFromMid, 1)}</span>
                             </div>
                             <div class="flex justify-between items-center text-sm border-b pb-1">
-                                <span>+ 잔금 (30%)</span>
+                                <span>+ 잔금(30%)</span>
                                 <span class="font-bold text-red-600">${formatAmount(balancePayment, 1)}</span>
                             </div>
                             <div class="flex justify-between items-center text-sm">
-                                <span>+ 취득세 (3.3%)</span>
+                                <span>+ 취득세(3.3%)</span>
                                 <span class="font-bold text-red-600">${formatAmount(tax, 1)}</span>
                             </div>
                             <!-- NEW: Name Changed -->
                             <div class="flex justify-between items-center text-base font-extrabold pt-2 border-t mt-2 text-warning">
-                                <span>입주 후 현금 지출 합계 (B)</span>
+                                <span>입주 후 현금 지출 합계</span>
                                 <span>${formatAmount(requiredCashB, 1)}</span>
                             </div>
                         </div>
@@ -614,7 +614,7 @@
                             <!-- NEW: Feasibility Status -->
                             <div class="text-center mt-3 pt-2 border-t border-primary/50">
                                 <span class="text-lg font-extrabold ${cashSurplus >= 0 ? 'text-secondary' : 'text-warning'}">
-                                    ${cashSurplus >= 0 ? '✅ 청약 조달 가능' : '❌ 추가 현금 확보 필요'}
+                                    ${cashSurplus >= 0 ? '✅ 청약 가능' : '❌ 현금 확보 필요'}
                                 </span>
                             </div>
                         </div>
