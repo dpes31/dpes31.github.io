@@ -133,17 +133,20 @@
             <div id="final-loan-detail" class="text-center"></div>
             <div id="loan-breakdown" class="mt-4 border-t pt-3"></div>
         </div>
-        <!-- Section 2: Cash Required (General Purchase Only) -->
+        
+        <!-- Section 2: Cash Required (General Purchase Only) - REPURPOSED -->
         <div class="section bg-gray-50 p-4 rounded-xl shadow-sm mb-6" id="section-outlay">
-            <h3 id="outlay-title" class="text-xl font-bold text-gray-700 mb-4 border-b border-gray-200 pb-2">2. 매매 개요 및 총 현금 흐름</h3>
+            <h3 id="outlay-title" class="text-xl font-bold text-gray-700 mb-4 border-b border-gray-200 pb-2">2. 매매 현금 흐름 상세 분석</h3>
             <div id="outlay-items" class="space-y-2"></div>
             <p class="text-xs text-gray-500 mt-4 hidden" id="outlay-note">취득세 3.3% + 중개 보수료 0.6% + 기타 0.1억 적용</p>
         </div>
+        
         <!-- Section 2: Cash Flow (Subscription Only) -->
         <div class="section bg-gray-50 p-4 rounded-xl shadow-sm mb-6 hidden" id="loan-flow-section">
             <h3 class="text-xl font-bold text-gray-700 mb-4 border-b border-gray-200 pb-2">2. 청약 현금 흐름 상세 분석</h3>
             <div id="loan-flow-content"></div>
         </div>
+        
         <!-- Section 3: Interest Section (NEW POSITION) -->
         <div class="section bg-card-bg p-4 rounded-xl shadow-md border border-gray-200 mb-6" id="interest-section-container">
             <!-- ID added: for dynamic title change -->
@@ -168,14 +171,16 @@
                 </div>
             </div>
         </div>
-        <!-- Section 4: Total Summary (NEW POSITION) - Hidden by JS if lottery -->
-        <div class="section p-4 rounded-xl border-4" id="section-summary">
+        
+        <!-- Section 4: Total Summary (NOW HIDDEN FOR BOTH) -->
+        <div class="section p-4 rounded-xl border-4 hidden" id="section-summary">
             <h3 class="text-xl font-bold text-gray-800 mb-4">4. 최종 자금 조달 요약</h3>
             <div id="total-summary" class="space-y-3"></div>
             <div id="feasibility" class="mt-5 p-4 rounded-lg text-center font-extrabold text-xl shadow-inner"></div>
             <!-- Location for mid-loan repayment warning message -->
             <div id="final-warning-box"></div>
         </div>
+        
         <!-- Policy Note -->
         <div class="tip-box mt-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded-r-md text-sm text-gray-700 leading-relaxed">
             <strong class="text-yellow-700">정책 참고 사항</strong>
@@ -293,13 +298,15 @@
             document.getElementById('section-outlay').classList.toggle('hidden', isLottery);
             document.getElementById('loan-flow-section').classList.toggle('hidden', !isLottery);
             
-            // *** NEW *** Hide Section 4 (Summary) if 'lottery' type
-            document.getElementById('section-summary').classList.toggle('hidden', isLottery);
-            // Update Section 2. Cash Flow Title
+            // *** UPDATED *** Always hide Section 4 (Summary)
+            document.getElementById('section-summary').classList.add('hidden');
+            
+            // Update Section 2. Title based on type
             if (isLottery) {
                 document.getElementById('loan-flow-section').querySelector('h3').textContent = '2. 청약 현금 흐름 상세 분석';
             } else {
-                document.getElementById('outlay-title').textContent = '2. 매매 개요 및 총 현금 흐름';
+                // *** UPDATED *** New title for 'buy' type
+                document.getElementById('outlay-title').textContent = '2. 매매 현금 흐름 상세 분석';
             }
         }
         
@@ -366,7 +373,11 @@
             
             const errorMessageDiv = document.getElementById('input-error-message');
             errorMessageDiv.classList.add('hidden'); // Hide previous error message
-            document.getElementById('final-warning-box').innerHTML = ''; // Initialize error message
+            // *** UPDATED: Clear specific warning box for 'buy' type if it exists ***
+            if (type === 'buy') {
+                 const buyWarningBox = document.getElementById('final-warning-box-buy');
+                 if(buyWarningBox) buyWarningBox.innerHTML = '';
+            }
             document.getElementById('result').classList.remove('result-visible'); // Hide result area
             
             // *** Validation Check (Missing Input Check) ***
@@ -388,15 +399,11 @@
             
             // *** Validation Check (Multi-homeowner Loan Impossible Check) ***
             if (houses === 'multi') {
-                 // *** FIX: Show warning in 'final-warning-box' for 'buy' type as well ***
-                 const warningBox = (type === 'buy') ? document.getElementById('final-warning-box') : document.getElementById('loan-flow-content');
+                 // *** UPDATED: Show warning in the *correct* section's content box ***
+                 const warningBoxId = (type === 'buy') ? 'outlay-items' : 'loan-flow-content';
+                 const warningBox = document.getElementById(warningBoxId);
                  
-                 if(type === 'buy') {
-                     warningBox.innerHTML = '<div class="mt-4 p-3 bg-red-100 border border-red-400 rounded-lg text-red-700 font-semibold"><p> 🚨  다주택자는 원칙적으로 주택 담보 대출 (잔금 대출)이 불가합니다.</p></div>';
-                 } else {
-                     // For 'lottery', show warning inside its own section
-                     warningBox.innerHTML = '<div class="mt-4 p-3 bg-red-100 border border-red-400 rounded-lg text-red-700 font-semibold"><p> 🚨  다주택자는 원칙적으로 주택 담보 대출 (잔금 대출)이 불가합니다.</p></div>';
-                 }
+                 warningBox.innerHTML = '<div class="mt-4 p-3 bg-red-100 border border-red-400 rounded-lg text-red-700 font-semibold"><p> 🚨  다주택자는 원칙적으로 주택 담보 대출 (잔금 대출)이 불가합니다.</p></div>';
                  
                  // Show results section to display the warning
                  document.getElementById('result').classList.add('result-visible');
@@ -471,30 +478,78 @@
             let outlayHtml = '';
             let cashNeededForCalculation = 0; // Net cash needed for comparison with available cash
             
-            // *** FIX: Define variables outside the 'if/else' blocks to fix scope error ***
             let totalProjectCostAplusB = 0;
             let cashSurplus = 0; // This will hold the final surplus/deficit
             let netCashNeededForFeasibility = 0; // For 'lottery' type, (A+B) - (Loan + Disposal)
+            
             if (type === 'buy') {
-                // General Purchase Logic (Existing logic: Total required - Loan)
-                cashRequired = totalPurchasePrice - finalLoan;
-                cashNeededForCalculation = cashRequired; // Net cash needed before accounting for disposal assets
+                // *** UPDATED: 'BUY' TYPE LOGIC ***
+                cashRequired = totalPurchasePrice - finalLoan; // Net cash needed before user assets
+                cashNeededForCalculation = cashRequired; 
                 
-                // *** FIX: Calculate cashSurplus for 'buy' type ***
-                cashSurplus = totalAvailableCash - cashRequired;
-                // *** FIX: Set netCashNeededForFeasibility for 'buy' type (it's the same as cashRequired) ***
+                cashSurplus = totalAvailableCash - cashRequired; // Final surplus (User Assets - Net Cash Required)
                 netCashNeededForFeasibility = cashRequired;
-                
-                // *** FIX: Set totalProjectCostAplusB for 'buy' type for summary section ***
-                totalProjectCostAplusB = totalPurchasePrice;
+                totalProjectCostAplusB = totalPurchasePrice; // Total project cost
+                const totalFundsAvailable = finalLoan + disposalAssets;
+
+                // --- NEW HTML for 'buy' type ---
                 outlayHtml = `
-                    <div class="flex justify-between items-center text-sm border-b pb-1"><span>총 매매가</span><span class="font-bold text-gray-700">${formatAmount(price)}</span></div>
-                    <div class="flex justify-between items-center text-sm border-b pb-1"><span>총 부대 비용</span><span class="font-bold text-gray-700">${formatAmount(totalCost)}</span></div>
-                    <div class="flex justify-between items-center text-sm border-b pb-1 mt-3"><span>총 소요액</span><span class="text-xl font-extrabold text-gray-800">${formatAmount(totalPurchasePrice)}</span></div>
-                    <div class="flex justify-between items-center text-sm border-b pb-1 mt-3"><span>최대 대출 가능액</span><span class="font-bold text-primary">${formatAmount(finalLoan)}</span></div>
-                    <div class="flex justify-between items-center text-sm pt-2"><span>총 현금 필요액</span><span class="text-2xl font-extrabold text-red-600">${formatAmount(cashRequired)}</span></div>
+                    <!-- 1. 총 매매 소요액 -->
+                    <div class="p-3 bg-gray-100 rounded-lg mb-4 border border-gray-300">
+                        <p class="text-base font-bold text-gray-700 mb-2">총 매매 소요액 (${formatAmount(totalPurchasePrice, 1)})</p>
+                        <div class="flex justify-between items-center text-sm border-b pb-1"><span>- 주택 매매가</span><span class="font-extrabold text-gray-700">${formatAmount(price, 1)}</span></div>
+                        <div class="flex justify-between items-center text-sm"><span>- 부대 비용(취득세 등)</span><span class="font-extrabold text-gray-700">${formatAmount(totalCost, 1)}</span></div>
+                    </div>
+                    
+                    <!-- 2. 🏦 총 조달 가능 금액 -->
+                    <div class="p-3 bg-blue-50 rounded-lg mt-3 border border-primary">
+                        <p class="text-base font-bold text-primary mb-2"> 🏦 총 조달 가능 금액 (대출 + 자산)</p>
+                        <div class="flex justify-between items-center text-sm"><span>최대 잔금 대출금</span><span class="text-primary-600 font-extrabold text-primary">${formatAmount(finalLoan, 1)}</span></div>
+                        <div class="flex justify-between items-center text-sm"><span>보유 자산 처분액</span><span class="text-secondary-600 font-extrabold text-secondary">${formatAmount(disposalAssets, 1)}</span></div>
+                        <div class="flex justify-between items-center text-base font-extrabold pt-2 border-t mt-2 text-primary">
+                            <span>총 조달 가능 금액 합산</span>
+                            <span>${formatAmount(totalFundsAvailable, 1)}</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. 🔥 최종 현금 여유액 산출 -->
+                    <div class="p-4 bg-white rounded-xl mt-6 shadow-md border border-gray-200" id="cash-flow-summary-buy">
+                        <h4 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">3. 최종 현금 여유액 산출</h4>
+                        
+                        <div class="p-3 bg-blue-50 rounded-lg border border-primary/50">
+                            <div class="flex justify-between items-center text-sm border-b pb-1">
+                                <span>총 매매 소요액</span>
+                                <span class="font-extrabold text-gray-800">${formatAmount(totalPurchasePrice, 1)}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center text-sm border-b border-dashed pb-1">
+                                <span>- 최대 잔금 대출금</span>
+                                <span class="font-bold text-primary">(-) ${formatAmount(finalLoan, 1)}</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm border-b border-dashed pb-1">
+                                <span>- 보유 자산 처분액</span>
+                                <span class="font-bold text-secondary">(-) ${formatAmount(disposalAssets, 1)}</span>
+                            </div>
+                            
+                            <!-- Final calculated result -->
+                            <div class="flex justify-between items-center text-base pt-3 border-t-2 border-primary mt-2">
+                                <span class="font-extrabold">현금 여유액</span>
+                                <span class="text-2xl font-extrabold ${cashSurplus >= 0 ? 'text-secondary' : 'text-warning'}">
+                                    ${cashSurplus >= 0 ? formatAmount(cashSurplus, 1) : formatAmount(Math.abs(cashSurplus), 1) + ' (부족)'}
+                                </span>
+                            </div>
+
+                            <!-- Feasibility Status -->
+                            <div class="text-center mt-3 pt-2 border-t border-primary/50">
+                                <span class="text-lg font-extrabold ${cashSurplus >= 0 ? 'text-secondary' : 'text-warning'}">
+                                    ${cashSurplus >= 0 ? ' ✅ 매매 가능' : ' ❌ 현금 확보 필요'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 `;
                 document.getElementById('outlay-items').innerHTML = outlayHtml;
+
             } else {
                 // **Subscription/Lottery Logic (Reflected Request)**
                 
@@ -526,17 +581,13 @@
                 // II. Cash Required At Entry (B) - Balance/Mid-loan repayment/Acquisition tax
                 const requiredCashB = totalNeedAtEntry; 
                 // III. Total Cash Required (A + B) - Total Project Cost
-                // *** FIX: Remove const ***
                 totalProjectCostAplusB = requiredCashA + requiredCashB; // Deposit+Self-paid Mid + Balance+Mid-loan repayment+Tax
                 // IV. Total Available Funds
                 const totalFundsAvailable = finalLoan + disposalAssets;
                 // V. Final Cash Surplus (A+B) - (Loan + Disposal Assets)
-                // *** FIX: Remove const ***
                 cashSurplus = totalFundsAvailable - totalProjectCostAplusB;
                 
                 // Net cash needed for feasibility comparison
-                // Net cash to be invested (Positive if shortage, negative if surplus)
-                // *** FIX: Remove const ***
                 netCashNeededForFeasibility = totalProjectCostAplusB - totalFundsAvailable;
                 cashNeededForCalculation = Math.max(0, netCashNeededForFeasibility); // Keep comparison standard for 'Total Summary' section
                 
@@ -661,60 +712,19 @@
             document.getElementById('total-level-repay').innerHTML = formatTotalRepay(totalRepayLevel);
             
             document.getElementById('total-loan-display').innerHTML = finalLoan.toFixed(1);
+            
             // ----------------------------------------------------
-            // --- Section 4: Final Fund Procurement Summary (Only for 'buy' type) ---
+            // --- Section 4: (NOW DISABLED) ---
             // ----------------------------------------------------
             if (type === 'buy') {
-                let totalSummaryHtml = '';
+                // *** UPDATED: This logic is now merged into Section 2 ***
+                // Clear any potential leftover data
+                document.getElementById('total-summary').innerHTML = "";
+                document.getElementById('feasibility').innerHTML = "";
+                document.getElementById('final-warning-box').innerHTML = "";
                 
-                // A. Total Required Funds (Common: Price + Incidental Costs)
-                const totalNeeded = totalProjectCostAplusB; // Use the value calculated earlier
-                
-                // B. Available Funds
-                const totalAvailableLoan = finalLoan; // Balance Loan
-                
-                totalSummaryHtml += `
-                    <div class="flex justify-between items-center text-lg font-semibold">
-                        <span>총 소요 자금 (프로젝트 총 비용)</span>
-                        <span class="text-gray-800">${formatAmount(totalNeeded, 2)}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-base border-t border-gray-300 pt-2 mt-2">
-                        <span>1. 최대 잔금 대출금</span> 
-                        <span class="font-bold text-primary">${formatAmount(totalAvailableLoan, 2)}</span>
-                    </div>
-                `;
-                // Final recognized cash assets (Disposal Amount)
-                totalSummaryHtml += `
-                    <div class="flex justify-between items-center text-base border-b border-gray-300 pb-2 mb-2">
-                        <span>2. 최종 인정 현금 자산 (처분 예정 금액)</span>
-                        <span class="font-bold text-secondary">${formatAmount(disposalAssets, 2)}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-lg font-extrabold">
-                        <span>3. 현금 여유액</span>
-                        <span class="${cashSurplus >= 0 ? 'text-secondary' : 'text-warning'}">${cashSurplus >= 0 ? formatAmount(cashSurplus, 2) : formatAmount(Math.abs(cashSurplus), 2) + ' (부족)'}</span>
-                    </div>
-                `;
-                
-                document.getElementById('total-summary').innerHTML = totalSummaryHtml;
-                
-                // D. Final Feasibility and Warning
-                const feasibilityBox = document.getElementById('feasibility');
-                const finalWarningBox = document.getElementById('final-warning-box');
-                
-                if (cashSurplus >= 0) {
-                    feasibilityBox.className = 'mt-5 p-4 rounded-lg text-center font-extrabold text-xl shadow-inner bg-green-100 text-secondary border-secondary';
-                    feasibilityBox.innerHTML = ` ✅  자금 조달 가능! (순 현금 여유: ${formatAmount(cashSurplus, 2)})`;
-                    finalWarningBox.innerHTML = ''; // Clear warning box
-                } else {
-                    const lack = Math.abs(cashSurplus);
-                    feasibilityBox.className = 'mt-5 p-4 rounded-lg text-center font-extrabold text-xl shadow-inner bg-red-100 text-warning border-warning';
-                    feasibilityBox.innerHTML = ` ❌  자금 부족! (부족액: ${formatAmount(lack, 2)})`;
-                }
             } else {
                 // 'lottery' type - Add residency requirement warning
-                const finalWarningBox = document.getElementById('final-warning-box'); // This box is inside Section 4, which is hidden.
-                // We need a place for the warning *inside* the lottery section if Section 4 is hidden.
-                // Let's create a new warning box ID inside the lottery flow section.
                 
                 // We will append the warning *after* the loan-flow-content
                 let lotteryWarningHtml = '';
