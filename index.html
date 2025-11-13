@@ -52,7 +52,8 @@
         <!-- Input Group: 주택 가격 -->
         <div class="mb-4">
             <label for="price" class="block text-sm font-semibold text-gray-700 mb-1">주택 가격 (억 원)</label>
-            <input type="number" id="price" placeholder="10" step="0.1" oninput="updateRules(); showCap();" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+            <!-- *** UPDATED: type="text" and inputmode="decimal" *** -->
+            <input type="text" inputmode="decimal" id="price" placeholder="10" step="0.1" oninput="updateRules(); showCap();" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
         </div>
         <!-- Input Group: 투자 지역 -->
         <div class="mb-4">
@@ -81,13 +82,15 @@
         <!-- Input Group: 보유 자산 처분 예정 금액 (이것만 남김) -->
         <div class="mb-4">
             <label for="disposalAssets" class="block text-sm font-semibold text-gray-700 mb-1">보유 자산 (처분 예정 금액) (억 원)</label>
-            <input type="number" id="disposalAssets" placeholder="2" step="0.1" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+            <!-- *** UPDATED: type="text" and inputmode="decimal" *** -->
+            <input type="text" inputmode="decimal" id="disposalAssets" placeholder="2" step="0.1" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
         </div>
         
         <!-- Input Group: 연간 소득 -->
         <div class="mb-4">
             <label for="income" class="block text-sm font-semibold text-gray-700 mb-1">연간 소득 (세전, 억 원)</label>
-            <input type="number" id="income" placeholder="1" step="0.1" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+            <!-- *** UPDATED: type="text" and inputmode="decimal" *** -->
+            <input type="text" inputmode="decimal" id="income" placeholder="1" step="0.1" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
         </div>
         <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 mt-6">대출 조건</h2>
         
@@ -97,17 +100,18 @@
             <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label for="contractRate" class="block text-xs font-medium text-gray-600 mb-1">계약금 비율(%)</label>
-                    <!-- *** UPDATED: Added oninput event *** -->
-                    <input type="number" id="contractRate" placeholder="10" value="10" step="1" min="0" max="40" oninput="updateBalanceRate()" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    <!-- *** UPDATED: type="text" and inputmode="decimal" *** -->
+                    <input type="text" inputmode="decimal" id="contractRate" placeholder="10" value="10" step="1" min="0" max="40" oninput="updateBalanceRate()" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
                 </div>
                 <div>
                     <label for="midLoanRate" class="block text-xs font-medium text-gray-600 mb-1">중도금 대출(%)</label>
-                    <input type="number" id="midLoanRate" placeholder="40" value="40" step="5" min="0" max="60" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    <!-- *** UPDATED: type="text" and inputmode="decimal" *** -->
+                    <input type="text" inputmode="decimal" id="midLoanRate" placeholder="40" value="40" step="5" min="0" max="60" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
                 </div>
                 <div>
                     <label for="balanceRate" class="block text-xs font-medium text-gray-600 mb-1">잔금 비율(%)</label>
-                    <!-- *** UPDATED: Added readonly and bg-gray-100 *** -->
-                    <input type="number" id="balanceRate" placeholder="30" value="30" step="1" min="0" readonly class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary bg-gray-100 cursor-not-allowed">
+                    <!-- *** UPDATED: type="text" and inputmode="decimal" *** -->
+                    <input type="text" inputmode="decimal" id="balanceRate" placeholder="30" value="30" step="1" min="0" readonly class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary bg-gray-100 cursor-not-allowed">
                 </div>
             </div>
             <!-- *** UPDATED: Helper text changed *** -->
@@ -118,7 +122,8 @@
         <!-- Input Group: 대출 금리 (공통) -->
         <div class="mb-6">
             <label for="interestRate" class="block text-sm font-semibold text-gray-700 mb-1">대출 금리 (%)</label>
-            <input type="number" id="interestRate" placeholder="4.0" step="0.1" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+            <!-- *** UPDATED: type="text" and inputmode="decimal" *** -->
+            <input type="text" inputmode="decimal" id="interestRate" placeholder="4.0" step="0.1" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
         </div>
 
         <!-- NEW: Error message display area for missing input values -->
@@ -791,6 +796,15 @@
             showCap();
             // *** NEW: Initialize balance rate on load ***
             updateBalanceRate();
+
+            // *** UPDATED: Selector changed to match new inputmode ***
+            const numberInputs = document.querySelectorAll('input[inputmode="decimal"]');
+            numberInputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    // On focus (like a tap), select all text in the input
+                    this.select();
+                });
+            });
         }
         // Add listeners to update rules immediately when input values change
         document.getElementById('price').addEventListener('input', () => {
