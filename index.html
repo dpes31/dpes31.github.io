@@ -97,19 +97,22 @@
             <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label for="contractRate" class="block text-xs font-medium text-gray-600 mb-1">계약금 비율(%)</label>
-                    <input type="number" id="contractRate" placeholder="10" value="10" step="1" min="0" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    <!-- *** UPDATED: Added oninput event *** -->
+                    <input type="number" id="contractRate" placeholder="10" value="10" step="1" min="0" max="40" oninput="updateBalanceRate()" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
                 </div>
                 <div>
                     <label for="midLoanRate" class="block text-xs font-medium text-gray-600 mb-1">중도금 대출(%)</label>
-                    <input type="number" id="midLoanRate" placeholder="40" value="40" step="5" min="0" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    <input type="number" id="midLoanRate" placeholder="40" value="40" step="5" min="0" max="60" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
                 </div>
                 <div>
                     <label for="balanceRate" class="block text-xs font-medium text-gray-600 mb-1">잔금 비율(%)</label>
-                    <input type="number" id="balanceRate" placeholder="30" value="30" step="1" min="0" class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary">
+                    <!-- *** UPDATED: Added readonly and bg-gray-100 *** -->
+                    <input type="number" id="balanceRate" placeholder="30" value="30" step="1" min="0" readonly class="input-group w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary bg-gray-100 cursor-not-allowed">
                 </div>
             </div>
-            <p class="text-xs text-gray-500 mt-2">※ 중도금 비율은 (100% - 계약금% - 잔금%)로 자동 계산됩니다.</p>
-            <p class="text-xs text-gray-500 mt-1">※ 중도금 대출(%)은 총 분양가 대비 비율입니다.</p>
+            <!-- *** UPDATED: Helper text changed *** -->
+            <p class="text-xs text-gray-500 mt-2">※ 계약금+잔금=40% (중도금 60%) 고정입니다. 잔금은 자동 계산됩니다.</p>
+            <p class="text-xs text-gray-500 mt-1">※ 중도금 대출(%)은 총 분양가 대비 비율입니다. (최대 60%)</p>
         </div>
         
         <!-- Input Group: 대출 금리 (공통) -->
@@ -354,6 +357,29 @@
             return principalPayment + interestPayment; // Won (Installment for the month)
         }
         
+        // *** NEW FUNCTION ***
+        // Update balance rate based on contract rate (assuming 40% total)
+        function updateBalanceRate() {
+            const contractRateInput = document.getElementById('contractRate');
+            const balanceRateInput = document.getElementById('balanceRate');
+            
+            let contractValue = parseFloat(contractRateInput.value) || 0;
+            
+            // Enforce 0 <= contractValue <= 40
+            if (contractValue < 0) {
+                contractValue = 0;
+                contractRateInput.value = 0;
+            }
+            if (contractValue > 40) {
+                contractValue = 40;
+                contractRateInput.value = 40;
+            }
+            
+            let balanceValue = 40 - contractValue;
+            
+            balanceRateInput.value = balanceValue.toFixed(0);
+        }
+
         // Main calculation function
         function calculate() {
             const type = document.getElementById('type').value;
@@ -366,7 +392,13 @@
             
             // *** UPDATED: Get new input values for lottery type ***
             const contractRateInput = parseFloat(document.getElementById('contractRate').value) || 10;
-            const balanceRateInput = parseFloat(document.getElementById('balanceRate').value) || 30;
+            // *** UPDATED: Balance rate is now derived, not read ***
+            const balanceRateInput = Math.max(0, 40 - contractRateInput); 
+            // Update the readonly field just in case (e.g., if default was used)
+            if (type === 'lottery') {
+                document.getElementById('balanceRate').value = balanceRateInput.toFixed(0);
+            }
+
             // midRate: 중도금 대출 비율 (총 분양가 대비)
             const midRate = type === 'lottery' ? parseFloat(document.getElementById('midLoanRate').value) || 40 : 0; 
 
@@ -387,13 +419,19 @@
                  return; // Exit function if input is missing
             }
 
-            // *** NEW: Validation Check (Lottery Rates Sum) ***
+            // *** UPDATED: Validation Check (Lottery Rates Sum) ***
             if (type === 'lottery') {
-                const totalPercent = contractRateInput + balanceRateInput + (Math.max(0, 100 - contractRateInput - balanceRateInput));
-                if (totalPercent !== 100 || contractRateInput < 0 || balanceRateInput < 0 || (100 - contractRateInput - balanceRateInput) < 0) {
-                     errorMessageDiv.innerHTML = ' 🚨  청약 납부 비율(계약금, 잔금)이 올바르지 않습니다. (계약금 + 잔금은 100% 미만이어야 합니다)';
+                // Validation is now just for contract rate, as balance is derived
+                if (contractRateInput < 0 || contractRateInput > 40) {
+                     errorMessageDiv.innerHTML = ' 🚨  계약금 비율은 0%와 40% 사이여야 합니다.';
                      errorMessageDiv.classList.remove('hidden');
                      return;
+                }
+                // Check if mid-loan rate exceeds total mid-payment rate (which is 60%)
+                if (midRate > 60) { 
+                    errorMessageDiv.innerHTML = ` 🚨  중도금 대출은 최대 60% (총 중도금 비율)까지만 가능합니다.`;
+                    errorMessageDiv.classList.remove('hidden');
+                    return;
                 }
             }
             
@@ -555,19 +593,20 @@
                 
                 // *** UPDATED: Subscription price details (from Input) ***
                 const contractRate = contractRateInput / 100; // e.g. 0.1
-                const balanceRate = balanceRateInput / 100; // e.g. 0.3
-                const totalMidPaymentRate = Math.max(0, 1 - contractRate - balanceRate); // e.g. 1 - 0.1 - 0.3 = 0.6
+                const balanceRate = balanceRateInput / 100; // e.g. 0.3 (derived)
+                // *** UPDATED: Mid payment rate is now fixed at 0.6 (60%) ***
+                const totalMidPaymentRate = 0.6; // 1 - 0.1 - 0.3 = 0.6
                 
                 const contractDeposit = price * contractRate; // Deposit
-                const totalMidPayment = price * totalMidPaymentRate; // Total mid-payment
-                const balancePayment = price * balanceRate; // Balance payment
+                const totalMidPayment = price * totalMidPaymentRate; // Total mid-payment (60%)
+                const balancePayment = price * balanceRate; // Balance payment (derived)
                 
                 const midPaymentLoanRate = midRate / 100; // Group mid-loan rate (e.g., 0.4)
                 const midPaymentRateDisplay = midRate.toFixed(0); // For display (e.g., 40%)
 
                 // A. Cash Outlay Before Entry (Deposit + Self-paid Mid-payment)
-                // (총 중도금 비율 - 중도금 대출 비율)
-                const cashForMidPaymentRate = Math.max(0, totalMidPaymentRate - midPaymentLoanRate); // Portion of 60% excluding loan (e.g., 0.6 - 0.4 = 0.2)
+                // (총 중도금 비율(0.6) - 중도금 대출 비율)
+                const cashForMidPaymentRate = Math.max(0, totalMidPaymentRate - midPaymentLoanRate); // (e.g., 0.6 - 0.4 = 0.2)
                 const cashForMidPayment = price * cashForMidPaymentRate; // Cash portion of mid-payment (억)
                 const cashSpentBeforeEntry = contractDeposit + cashForMidPayment; // (A) Total cash required before entry
                 
@@ -750,6 +789,8 @@
             updateRules();
             toggleMidLoan();
             showCap();
+            // *** NEW: Initialize balance rate on load ***
+            updateBalanceRate();
         }
         // Add listeners to update rules immediately when input values change
         document.getElementById('price').addEventListener('input', () => {
@@ -767,6 +808,8 @@
         document.getElementById('type').addEventListener('change', () => {
              updateRules();
              showCap();
+             // *** NEW: Update balance rate when type changes ***
+             updateBalanceRate();
         });
     </script>
 </body>
